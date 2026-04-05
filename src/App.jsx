@@ -9,6 +9,7 @@ function App() {
 
   return (
     <>
+    <h1 className='font-bold underline text-red-500'>Hello React</h1>
       <section id="center">
         <div className="hero">
           <img src={heroImg} className="base" width="170" height="179" alt="" />
