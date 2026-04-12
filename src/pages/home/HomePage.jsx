@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const mockDevices = [
 
@@ -42,6 +43,7 @@ function DeviceCard({ device }) {
 
 function HomePage() {
     const [devices] = useState(mockDevices);
+    const navigate = useNavigate();
 
     return (
         <div className="flex gap-6">
@@ -55,7 +57,9 @@ function HomePage() {
                             <span className="text-xl">📔</span>
                             <span className="text-xs text-gray-600">다이어리</span>
                         </button>
-                        <button className="flex flex-col items-center gap-1 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                        <button 
+                            onClick={() => navigate("/mypage")}
+                            className="flex flex-col items-center gap-1 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                             <span className="text-xl">🤍</span>
                             <span className="text-xs text-gray-600">마이페이지</span>
                         </button>

@@ -6,6 +6,8 @@ import ArticleManagementPage from "../pages/admin/admin-management/ArticleManage
 import ArticleCreatePage from "../pages/admin/admin-management/ArticleCreatePage";
 import LoginPage from "../pages/auth/LoginPage";
 import SignUpPage from "../pages/auth/SignUpPage";
+import MyPage from "../pages/mypage/MyPage";
+import ProtectedRoute from "../components/layouts/ProtectedRoute";
 
 function AppRoutes() {
     return (
@@ -22,6 +24,8 @@ function AppRoutes() {
 
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignUpPage />} />
+
+            <Route path="/mypage" element={<ProtectedRoute><MyPage /></ProtectedRoute>} />
         </Routes>
     )
 }
