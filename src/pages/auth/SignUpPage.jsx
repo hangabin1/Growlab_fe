@@ -26,7 +26,7 @@ function SignUpPage() {
             await signupApi(form.username, form.email, form.password);
             navigate("/login");
         } catch (err) {
-            setError(err.response?.data || "회원가입 중 오류가 발생했습니다.");
+            setError(err.response?.data?.message || err.response?.data || "회원가입 중 오류가 발생했습니다.");
         } finally {
             setLoading(false);
         }
@@ -60,6 +60,7 @@ function SignUpPage() {
                             required
                             className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
                         />
+                        <p className="text-xs text-gray-400 mt-1">4~20자 이내</p>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
@@ -72,6 +73,7 @@ function SignUpPage() {
                             required
                             className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
                         />
+                        <p className="text-xs text-gray-400 mt-1">'@' 포함 필수입력</p>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
@@ -84,6 +86,7 @@ function SignUpPage() {
                             required
                             className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
                         />
+                        <p className="text-xs text-gray-400 mt-1">8~20자 이내</p>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호 확인</label>
