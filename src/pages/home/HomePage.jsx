@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUnreadCountApi } from "../../api/noticeApi";
+import AddDeviceModal from "../../components/device/AddDeviceModal";
 
 const mockDevices = [];
 
@@ -43,6 +44,7 @@ function DeviceCard({ device }) {
 function HomePage() {
     const [devices] = useState(mockDevices);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [showAddModal, setShowAddModal] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -103,7 +105,9 @@ function HomePage() {
             <div className="flex-grow">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-bold text-gray-800">My Farm</h2>
-                    <button className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+                    <button
+                        onClick={() => setShowAddModal(true)}
+                        className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
                         + 기기 추가
                     </button>
                 </div>
@@ -113,6 +117,14 @@ function HomePage() {
                     ))}
                 </div>
             </div>
+
+            {/* 기기 추가 모달 */}
+            {showAddModal && (
+                <AddDeviceModal
+                    onClose={() => setShowAddModal(false)}
+                    onSuccess={() => setShowAddModal(false)}
+                />
+            )}
         </div>
     );
 }
