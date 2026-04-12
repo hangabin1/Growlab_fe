@@ -8,6 +8,7 @@ import LoginPage from "../pages/auth/LoginPage";
 import SignUpPage from "../pages/auth/SignUpPage";
 import MyPage from "../pages/mypage/MyPage";
 import ProtectedRoute from "../components/layouts/ProtectedRoute";
+import NotificationPage from "../pages/notifications/NotificationPage";
 
 function AppRoutes() {
     return (
@@ -26,6 +27,8 @@ function AppRoutes() {
             <Route path="/signup" element={<SignUpPage />} />
 
             <Route path="/mypage" element={<ProtectedRoute><MyPage /></ProtectedRoute>} />
+
+            <Route path="/notifications" element={<ProtectedRoute><NotificationPage /></ProtectedRoute>} />
         </Routes>
     )
 }
