@@ -1,9 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { getUnreadCountApi } from "../../api/noticeApi";
 
-const mockDevices = [
-
-];
+const mockDevices = [];
 
 function DeviceCard({ device }) {
     return (
@@ -43,7 +42,23 @@ function DeviceCard({ device }) {
 
 function HomePage() {
     const [devices] = useState(mockDevices);
+    const [unreadCount, setUnreadCount] = useState(0);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        getUnreadCountApi()
+            .then(res => setUnreadCount(res.data))
+            .catch(err => console.error(err));
+    }, []);
+
+    const summaryItems = [
+        { icon: "🌡", label: "평균 온도", value: "23.5°C", color: "text-green-600", onClick: null },
+        { icon: "💧", label: "평균 습도", value: "65%", color: "text-green-600", onClick: null },
+        { icon: "⚡", label: "활성 기기", value: "0대", color: "text-green-600", onClick: null },
+        { icon: "🔔", label: "미확인 알림", value: `${unreadCount}건`, color: "text-green-600", onClick: () => navigate("/notifications") },
+    ];
 
     return (
         <div className="flex gap-6">
@@ -57,7 +72,7 @@ function HomePage() {
                             <span className="text-xl">📔</span>
                             <span className="text-xs text-gray-600">다이어리</span>
                         </button>
-                        <button 
+                        <button
                             onClick={() => navigate("/mypage")}
                             className="flex flex-col items-center gap-1 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                             <span className="text-xl">🤍</span>
@@ -70,13 +85,12 @@ function HomePage() {
                 <div className="bg-white rounded-xl border border-gray-200 p-4">
                     <div className="text-sm font-semibold text-gray-700 mb-3">전체 환경 요약</div>
                     <div className="flex flex-col gap-2 text-sm">
-                        {[
-                            { icon: "🌡", label: "평균 온도", value: "23.5°C", color: "text-green-600" },
-                            { icon: "💧", label: "평균 습도", value: "65%", color: "text-green-600" },
-                            { icon: "⚡", label: "활성 기기", value: "0대", color: "text-green-600" },
-                            { icon: "🔔", label: "미확인 알림", value: "0건", color: "text-green-600" },
-                        ].map(({ icon, label, value, color }) => (
-                            <div key={label} className="flex justify-between items-center py-1 border-b border-gray-50 last:border-0">
+                        {summaryItems.map(({ icon, label, value, color, onClick }) => (
+                            <div
+                                key={label}
+                                onClick={onClick}
+                                className={`flex justify-between items-center py-1 border-b border-gray-50 last:border-0 ${onClick ? "cursor-pointer hover:bg-gray-50 rounded px-1 -mx-1 transition-colors" : ""}`}
+                            >
                                 <span className="text-gray-500">{icon} {label}</span>
                                 <span className={`font-semibold ${color}`}>{value}</span>
                             </div>
