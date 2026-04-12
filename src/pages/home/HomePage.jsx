@@ -70,7 +70,9 @@ function HomePage() {
                 <div className="bg-white rounded-xl border border-gray-200 p-4">
                     <div className="text-sm font-semibold text-gray-700 mb-3">바로가기</div>
                     <div className="grid grid-cols-2 gap-2">
-                        <button className="flex flex-col items-center gap-1 p-3 rounded-lg bg-green-50 hover:bg-green-100 transition-colors">
+                        <button
+                            onClick={() => navigate("/diary")}
+                            className="flex flex-col items-center gap-1 p-3 rounded-lg bg-green-50 hover:bg-green-100 transition-colors">
                             <span className="text-xl">📔</span>
                             <span className="text-xs text-gray-600">다이어리</span>
                         </button>
