@@ -42,24 +42,6 @@ function SignUpPage() {
                     <p className="text-sm text-gray-400 mt-1">스마트팜을 시작해보세요</p>
                 </div>
 
-                {/* 소셜 가입 */}
-                <div className="flex flex-col gap-3 mb-6">
-                    <button className="flex items-center justify-center gap-3 w-full border border-gray-200 rounded-lg py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="google" />
-                        Google로 가입
-                    </button>
-                    <button className="flex items-center justify-center gap-3 w-full bg-yellow-300 rounded-lg py-2.5 text-sm text-yellow-900 font-medium hover:bg-yellow-400 transition-colors">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/e/e3/KakaoTalk_logo.svg" className="w-5 h-5" alt="kakao" />
-                        카카오로 가입
-                    </button>
-                </div>
-
-                <div className="flex items-center gap-3 mb-6">
-                    <hr className="flex-grow border-gray-200" />
-                    <span className="text-xs text-gray-400">또는</span>
-                    <hr className="flex-grow border-gray-200" />
-                </div>
-
                 {/* 일반 가입 폼 */}
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     {error && (
