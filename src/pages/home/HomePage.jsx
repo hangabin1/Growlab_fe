@@ -1,39 +1,70 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUnreadCountApi } from "../../api/noticeApi";
+import { getUserDevicesApi, deleteDeviceApi } from "../../api/deviceApi";
 import AddDeviceModal from "../../components/device/AddDeviceModal";
 
-const mockDevices = [];
+const STAGE_LABEL = {
+    SEED: "씨앗",
+    GERMINATION: "발아",
+    MATURE: "성숙",
+};
 
-function DeviceCard({ device }) {
+const SPECIES_EMOJI = {
+    "방울토마토": "🍅",
+    "청상추": "🥬",
+    "바질": "🌿",
+    "딸기": "🍓",
+    "파프리카": "🌶️",
+    "브로콜리": "🥦",
+};
+
+function DeviceCard({ device, onDelete, onPlantRegister }) {
+    const emoji = device.plant ? (SPECIES_EMOJI[device.plant.species] || "🌱") : "🍓";
+
     return (
         <div className="bg-white rounded-xl border border-gray-200 p-4 relative">
-            <button className="absolute top-3 right-3 text-gray-300 hover:text-red-400 text-lg">✕</button>
-            <div className="flex items-center gap-2 mb-3">
-                <span className="text-2xl">{device.emoji}</span>
+            <button
+                onClick={() => onDelete(device.serialNumber)}
+                className="absolute top-3 right-3 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs hover:bg-red-600 transition-colors"
+            >✕</button>
+
+            <div className="flex items-center gap-3 mb-3">
+                <span className="text-3xl">{emoji}</span>
                 <div>
-                    <div className="font-semibold text-gray-800 text-sm">{device.name}</div>
-                    <div className="text-xs text-gray-400">{device.id}</div>
+                    <div className="font-semibold text-gray-800 text-sm">{device.deviceNickname}</div>
+                    <div className="text-xs text-gray-400">{device.serialNumber}</div>
+                    {device.plant ? (
+                        <div className="flex items-center gap-1 mt-0.5">
+                            <span className="text-xs text-gray-600">🌱 {device.plant.name}</span>
+                            <span className="text-xs px-1.5 py-0.5 rounded-full bg-green-50 text-green-600 font-medium">
+                                {STAGE_LABEL[device.plant.plantStage] || device.plant.plantStage}
+                            </span>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={() => onPlantRegister(device.serialNumber)}
+                            className="flex items-center gap-1 mt-0.5 text-xs text-yellow-600 hover:text-yellow-700"
+                        >
+                            <span>⚠️ 식물 미등록</span>
+                            <span className="underline">클릭하여 등록</span>
+                        </button>
+                    )}
                 </div>
-                <span className={`ml-2 text-xs px-2 py-0.5 rounded-full font-medium ${device.statusColor}`}>
-                    {device.plant} {device.status}
-                </span>
-                {device.waterAlert && (
-                    <span className="ml-1 text-xs px-2 py-0.5 rounded-full font-medium text-red-600 bg-red-50">수위 낮음</span>
-                )}
             </div>
+
             <div className="grid grid-cols-3 gap-2 text-center">
                 {[
-                    { label: "온도", value: device.temp },
-                    { label: "습도", value: device.humidity },
-                    { label: "pH", value: device.ph },
-                    { label: "EC", value: device.ec },
-                    { label: "수위", value: device.water, alert: device.waterAlert },
-                    { label: "조명", value: device.control },
-                ].map(({ label, value, alert }) => (
+                    { label: "온도", value: "-" },
+                    { label: "습도", value: "-" },
+                    { label: "pH", value: "-" },
+                    { label: "EC", value: "-" },
+                    { label: "수위", value: "-" },
+                    { label: "조명", value: device.status ? "ON" : "OFF" },
+                ].map(({ label, value }) => (
                     <div key={label} className="bg-gray-50 rounded-lg py-2">
                         <div className="text-xs text-gray-400">{label}</div>
-                        <div className={`text-sm font-semibold ${alert ? "text-red-500" : "text-gray-700"}`}>{value}</div>
+                        <div className="text-sm font-semibold text-gray-700">{value}</div>
                     </div>
                 ))}
             </div>
@@ -42,7 +73,7 @@ function DeviceCard({ device }) {
 }
 
 function HomePage() {
-    const [devices] = useState(mockDevices);
+    const [devices, setDevices] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [showAddModal, setShowAddModal] = useState(false);
     const navigate = useNavigate();
@@ -50,15 +81,36 @@ function HomePage() {
     useEffect(() => {
         const token = localStorage.getItem("token");
         if (!token) return;
+        fetchDevices();
         getUnreadCountApi()
             .then(res => setUnreadCount(res.data))
             .catch(err => console.error(err));
     }, []);
 
+    const fetchDevices = async () => {
+        try {
+            const res = await getUserDevicesApi();
+            console.log("기기 목록:", res.data);
+            setDevices(res.data);
+        } catch (err) { console.error(err); }
+    };
+
+    const handleDelete = async (serialNumber) => {
+        if (!window.confirm("기기를 삭제할까요?")) return;
+        try {
+            await deleteDeviceApi(serialNumber);
+            setDevices(prev => prev.filter(d => d.serialNumber !== serialNumber));
+        } catch (err) { console.error(err); }
+    };
+
+    const handlePlantRegister = (serialNumber) => {
+        alert(`${serialNumber} 기기에 식물을 등록해주세요.`);
+    };
+
     const summaryItems = [
         { icon: "🌡", label: "평균 온도", value: "23.5°C", color: "text-green-600", onClick: null },
         { icon: "💧", label: "평균 습도", value: "65%", color: "text-green-600", onClick: null },
-        { icon: "⚡", label: "활성 기기", value: "0대", color: "text-green-600", onClick: null },
+        { icon: "⚡", label: "활성 기기", value: `${devices.length}대`, color: "text-green-600", onClick: null },
         { icon: "🔔", label: "미확인 알림", value: `${unreadCount}건`, color: "text-green-600", onClick: () => navigate("/notifications") },
     ];
 
@@ -66,18 +118,15 @@ function HomePage() {
         <div className="flex gap-6">
             {/* 왼쪽 사이드바 */}
             <div className="w-64 flex-shrink-0 flex flex-col gap-4">
-                {/* 바로가기 */}
                 <div className="bg-white rounded-xl border border-gray-200 p-4">
                     <div className="text-sm font-semibold text-gray-700 mb-3">바로가기</div>
                     <div className="grid grid-cols-2 gap-2">
-                        <button
-                            onClick={() => navigate("/diary")}
+                        <button onClick={() => navigate("/diary")}
                             className="flex flex-col items-center gap-1 p-3 rounded-lg bg-green-50 hover:bg-green-100 transition-colors">
                             <span className="text-xl">📔</span>
                             <span className="text-xs text-gray-600">다이어리</span>
                         </button>
-                        <button
-                            onClick={() => navigate("/mypage")}
+                        <button onClick={() => navigate("/mypage")}
                             className="flex flex-col items-center gap-1 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                             <span className="text-xl">🤍</span>
                             <span className="text-xs text-gray-600">마이페이지</span>
@@ -85,16 +134,12 @@ function HomePage() {
                     </div>
                 </div>
 
-                {/* 전체 환경 요약 */}
                 <div className="bg-white rounded-xl border border-gray-200 p-4">
                     <div className="text-sm font-semibold text-gray-700 mb-3">전체 환경 요약</div>
                     <div className="flex flex-col gap-2 text-sm">
                         {summaryItems.map(({ icon, label, value, color, onClick }) => (
-                            <div
-                                key={label}
-                                onClick={onClick}
-                                className={`flex justify-between items-center py-1 border-b border-gray-50 last:border-0 ${onClick ? "cursor-pointer hover:bg-gray-50 rounded px-1 -mx-1 transition-colors" : ""}`}
-                            >
+                            <div key={label} onClick={onClick}
+                                className={`flex justify-between items-center py-1 border-b border-gray-50 last:border-0 ${onClick ? "cursor-pointer hover:bg-gray-50 rounded px-1 -mx-1 transition-colors" : ""}`}>
                                 <span className="text-gray-500">{icon} {label}</span>
                                 <span className={`font-semibold ${color}`}>{value}</span>
                             </div>
@@ -104,27 +149,45 @@ function HomePage() {
             </div>
 
             {/* 메인 콘텐츠 */}
-            <div className="flex-grow">
+            <div className="flex-grow min-w-0">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-bold text-gray-800">My Farm</h2>
-                    <button
-                        onClick={() => setShowAddModal(true)}
+                    <button onClick={() => setShowAddModal(true)}
                         className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
                         + 기기 추가
                     </button>
                 </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {devices.map(device => (
-                        <DeviceCard key={device.id} device={device} />
-                    ))}
-                </div>
+
+                {devices.length === 0 ? (
+                    <div className="bg-white rounded-xl border border-gray-200 p-10 text-center">
+                        <div className="text-4xl mb-3">🌱</div>
+                        <p className="text-gray-400 text-sm">등록된 기기가 없어요</p>
+                        <button onClick={() => setShowAddModal(true)}
+                            className="mt-4 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+                            + 기기 추가하기
+                        </button>
+                    </div>
+                ) : (
+                    <div className={`grid grid-cols-2 gap-4 ${devices.length > 4 ? "max-h-[900px] overflow-y-auto pr-1" : ""}`}>
+                        {devices.map(device => (
+                            <DeviceCard
+                                key={device.serialNumber}
+                                device={device}
+                                onDelete={handleDelete}
+                                onPlantRegister={handlePlantRegister}
+                            />
+                        ))}
+                    </div>
+                )}
             </div>
 
-            {/* 기기 추가 모달 */}
             {showAddModal && (
                 <AddDeviceModal
                     onClose={() => setShowAddModal(false)}
-                    onSuccess={() => setShowAddModal(false)}
+                    onSuccess={async () => {
+                        setShowAddModal(false);
+                        await fetchDevices();
+                    }}
                 />
             )}
         </div>
