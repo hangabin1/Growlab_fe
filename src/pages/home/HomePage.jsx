@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { getUnreadCountApi } from "../../api/noticeApi";
 import { getUserDevicesApi, deleteDeviceApi } from "../../api/deviceApi";
 import AddDeviceModal from "../../components/device/AddDeviceModal";
+import SelectPlantModal from "../../components/device/SelectPlantModal";
 
 const STAGE_LABEL = {
     SEED: "씨앗",
@@ -76,6 +77,7 @@ function HomePage() {
     const [devices, setDevices] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [plantRegisterSerial, setPlantRegisterSerial] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -90,7 +92,6 @@ function HomePage() {
     const fetchDevices = async () => {
         try {
             const res = await getUserDevicesApi();
-            console.log("기기 목록:", res.data);
             setDevices(res.data);
         } catch (err) { console.error(err); }
     };
@@ -104,7 +105,7 @@ function HomePage() {
     };
 
     const handlePlantRegister = (serialNumber) => {
-        alert(`${serialNumber} 기기에 식물을 등록해주세요.`);
+        setPlantRegisterSerial(serialNumber);
     };
 
     const summaryItems = [
@@ -116,7 +117,6 @@ function HomePage() {
 
     return (
         <div className="flex gap-6">
-            {/* 왼쪽 사이드바 */}
             <div className="w-64 flex-shrink-0 flex flex-col gap-4">
                 <div className="bg-white rounded-xl border border-gray-200 p-4">
                     <div className="text-sm font-semibold text-gray-700 mb-3">바로가기</div>
@@ -148,7 +148,6 @@ function HomePage() {
                 </div>
             </div>
 
-            {/* 메인 콘텐츠 */}
             <div className="flex-grow min-w-0">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-bold text-gray-800">My Farm</h2>
@@ -186,6 +185,17 @@ function HomePage() {
                     onClose={() => setShowAddModal(false)}
                     onSuccess={async () => {
                         setShowAddModal(false);
+                        await fetchDevices();
+                    }}
+                />
+            )}
+
+            {plantRegisterSerial && (
+                <SelectPlantModal
+                    serialNumber={plantRegisterSerial}
+                    onClose={() => setPlantRegisterSerial(null)}
+                    onSuccess={async () => {
+                        setPlantRegisterSerial(null);
                         await fetchDevices();
                     }}
                 />
