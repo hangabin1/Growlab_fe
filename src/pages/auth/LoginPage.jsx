@@ -20,6 +20,7 @@ function LoginPage() {
             const res = await loginApi(form.username, form.password);
             localStorage.setItem("token", res.data.accessToken);
             localStorage.setItem("username", res.data.username);
+            localStorage.setItem("userId", res.data.userId);
             navigate("/");
         } catch (err) {
             setError("아이디 또는 비밀번호가 올바르지 않습니다.");
