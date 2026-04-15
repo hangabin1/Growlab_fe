@@ -158,7 +158,17 @@ function HomePage() {
             <div className="flex-grow min-w-0">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-bold text-gray-800">My Farm</h2>
-                    <button onClick={() => setShowAddModal(true)}
+                    <button
+                        onClick={() => {
+                            const token = localStorage.getItem("token");
+
+                            if (!token) {
+                                navigate("/login");
+                                return;
+                            }
+
+                            setShowAddModal(true);
+                        }}
                         className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
                         + 기기 추가
                     </button>
@@ -168,7 +178,17 @@ function HomePage() {
                     <div className="bg-white rounded-xl border border-gray-200 p-10 text-center">
                         <div className="text-4xl mb-3">🌱</div>
                         <p className="text-gray-400 text-sm">등록된 기기가 없어요</p>
-                        <button onClick={() => setShowAddModal(true)}
+                        <button 
+                            onClick={() => {
+                                const token = localStorage.getItem("token");
+
+                                if (!token) {
+                                    navigate("/login");
+                                    return;
+                                }
+
+                                setShowAddModal(true);
+                            }}
                             className="mt-4 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
                             + 기기 추가하기
                         </button>
