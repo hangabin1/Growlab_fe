@@ -2,15 +2,20 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMyCommentsApi } from "../../api/commentApi";
 import { getMyArticlesApi } from "../../api/articleApi";
+import { updateUsernameApi, updatePasswordApi, deleteUserApi } from "../../api/authApi";
 
 const TABS = ["프로필", "내가 쓴 글", "내가 쓴 댓글"];
 
 function MyPage() {
-    const username = localStorage.getItem("username");
     const navigate = useNavigate();
+
+    // 🔥 기존 코드 유지하면서 state로만 변경 (UI 영향 없음)
+    const [username, setUsername] = useState(localStorage.getItem("username"));
+
     const [activeTab, setActiveTab] = useState("프로필");
     const [isEditingName, setIsEditingName] = useState(false);
     const [newUsername, setNewUsername] = useState(username);
+
     const [comments, setComments] = useState([]);
     const [articles, setArticles] = useState([]);
 
@@ -54,6 +59,8 @@ function MyPage() {
                     {activeTab === "프로필" && (
                         <div className="flex flex-col gap-4">
                             <div className="flex flex-col gap-3">
+
+                                {/* 아이디 변경 */}
                                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
                                     <span className="text-sm text-gray-500">아이디</span>
                                     {isEditingName ? (
@@ -64,31 +71,111 @@ function MyPage() {
                                                 onChange={e => setNewUsername(e.target.value)}
                                                 className="border border-gray-200 rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
                                             />
-                                            <button onClick={() => setIsEditingName(false)}
-                                                className="text-xs text-green-600 font-medium hover:text-green-700">저장</button>
-                                            <button onClick={() => { setIsEditingName(false); setNewUsername(username); }}
-                                                className="text-xs text-gray-400 hover:text-gray-600">취소</button>
+
+                                            {/* 🔥 기능 추가 */}
+                                            <button
+                                                onClick={async () => {
+                                                    try {
+                                                        const token = localStorage.getItem("token");
+                                                        await updateUsernameApi(newUsername, token);
+
+                                                        localStorage.setItem("username", newUsername);
+                                                        setUsername(newUsername);
+                                                        setIsEditingName(false);
+
+                                                        alert("아이디 변경 완료");
+                                                    } catch (e) {
+                                                        console.error(e);
+                                                        alert("아이디 변경 실패");
+                                                    }
+                                                }}
+                                                className="text-xs text-green-600 font-medium hover:text-green-700"
+                                            >
+                                                저장
+                                            </button>
+
+                                            <button
+                                                onClick={() => {
+                                                    setIsEditingName(false);
+                                                    setNewUsername(username);
+                                                }}
+                                                className="text-xs text-gray-400 hover:text-gray-600"
+                                            >
+                                                취소
+                                            </button>
                                         </div>
                                     ) : (
                                         <div className="flex items-center gap-2">
-                                            <span className="text-sm font-medium text-gray-800">{newUsername}</span>
-                                            <button onClick={() => setIsEditingName(true)}
-                                                className="text-xs text-gray-400 hover:text-green-600">수정</button>
+                                            <span className="text-sm font-medium text-gray-800">{username}</span>
+                                            <button
+                                                onClick={() => setIsEditingName(true)}
+                                                className="text-xs text-gray-400 hover:text-green-600"
+                                            >
+                                                수정
+                                            </button>
                                         </div>
                                     )}
                                 </div>
+
+                                {/* 비밀번호 변경 */}
                                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
                                     <span className="text-sm text-gray-500">비밀번호</span>
-                                    <button className="text-xs text-gray-400 hover:text-green-600">변경</button>
+                                    <button
+                                        className="text-xs text-gray-400 hover:text-green-600"
+                                        onClick={async () => {
+                                            const oldPassword = prompt("현재 비밀번호 입력");
+                                            const newPassword = prompt("새 비밀번호 입력");
+
+                                            if (!oldPassword || !newPassword) return;
+
+                                            try {
+                                                const token = localStorage.getItem("token");
+                                                await updatePasswordApi(oldPassword, newPassword, token);
+
+                                                alert("비밀번호 변경 완료");
+                                            } catch (e) {
+                                                console.error(e);
+                                                alert("비밀번호 변경 실패");
+                                            }
+                                        }}
+                                    >
+                                        변경
+                                    </button>
                                 </div>
+
+                                {/* 회원 탈퇴 */}
                                 <div className="flex justify-between items-center py-3">
                                     <span className="text-sm text-gray-500">회원 탈퇴</span>
-                                    <button className="text-xs text-red-400 hover:text-red-500">탈퇴</button>
+                                    <button
+                                        className="text-xs text-red-400 hover:text-red-500"
+                                        onClick={async () => {
+                                            const password = prompt("비밀번호 입력");
+
+                                            if (!password) return;
+
+                                            try {
+                                                const token = localStorage.getItem("token");
+                                                await deleteUserApi(password, token);
+
+                                                localStorage.clear();
+                                                alert("탈퇴 완료");
+
+                                                navigate("/login");
+                                            } catch (e) {
+                                                console.error(e);
+                                                alert("탈퇴 실패");
+                                            }
+                                        }}
+                                    >
+                                        탈퇴
+                                    </button>
                                 </div>
+
                             </div>
                         </div>
                     )}
 
+                    {/* 내가 쓴 글 */}
                     {activeTab === "내가 쓴 글" && (
                         <div className="flex flex-col gap-3">
                             {articles.length === 0 ? (
@@ -113,6 +200,7 @@ function MyPage() {
                         </div>
                     )}
 
+                    {/* 내가 쓴 댓글 */}
                     {activeTab === "내가 쓴 댓글" && (
                         <div className="flex flex-col gap-3">
                             {comments.length === 0 ? (
