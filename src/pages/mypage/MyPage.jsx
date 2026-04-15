@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getMyCommentsApi } from "../../api/commentApi";
 
 const TABS = ["프로필", "내가 쓴 글", "내가 쓴 댓글"];
 
@@ -8,9 +9,23 @@ function MyPage() {
     const [isEditingName, setIsEditingName] = useState(false);
     const [newUsername, setNewUsername] = useState(username);
 
-    // 목업 데이터
+    const [comments, setComments] = useState([]);
+
+    // 🔥 내가 쓴 댓글 가져오기
+    useEffect(() => {
+        const userId = localStorage.getItem("userId");
+
+        if (!userId) return;
+
+        getMyCommentsApi(userId)
+            .then(res => {
+                setComments(res.data);
+            })
+            .catch(err => console.error(err));
+    }, []);
+
+    // 목업 데이터 (글은 아직 유지)
     const mockArticles = [];
-    const mockComments = [];
 
     return (
         <div className="max-w-2xl mx-auto flex flex-col gap-4">
@@ -30,7 +45,9 @@ function MyPage() {
                             onClick={() => setActiveTab(tab)}
                             className={`flex-1 py-3 text-sm font-medium transition-colors
                                 ${activeTab === tab ? "text-green-600 border-b-2 border-green-600" : "text-gray-400 hover:text-gray-600"}`}
-                        >{tab}</button>
+                        >
+                            {tab}
+                        </button>
                     ))}
                 </div>
 
@@ -52,11 +69,18 @@ function MyPage() {
                                             <button
                                                 onClick={() => setIsEditingName(false)}
                                                 className="text-xs text-green-600 font-medium hover:text-green-700"
-                                            >저장</button>
+                                            >
+                                                저장
+                                            </button>
                                             <button
-                                                onClick={() => { setIsEditingName(false); setNewUsername(username); }}
+                                                onClick={() => {
+                                                    setIsEditingName(false);
+                                                    setNewUsername(username);
+                                                }}
                                                 className="text-xs text-gray-400 hover:text-gray-600"
-                                            >취소</button>
+                                            >
+                                                취소
+                                            </button>
                                         </div>
                                     ) : (
                                         <div className="flex items-center gap-2">
@@ -64,14 +88,18 @@ function MyPage() {
                                             <button
                                                 onClick={() => setIsEditingName(true)}
                                                 className="text-xs text-gray-400 hover:text-green-600"
-                                            >수정</button>
+                                            >
+                                                수정
+                                            </button>
                                         </div>
                                     )}
                                 </div>
+
                                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
                                     <span className="text-sm text-gray-500">비밀번호</span>
                                     <button className="text-xs text-gray-400 hover:text-green-600">변경</button>
                                 </div>
+
                                 <div className="flex justify-between items-center py-3">
                                     <span className="text-sm text-gray-500">회원 탈퇴</span>
                                     <button className="text-xs text-red-400 hover:text-red-500">탈퇴</button>
@@ -84,13 +112,19 @@ function MyPage() {
                     {activeTab === "내가 쓴 글" && (
                         <div className="flex flex-col gap-3">
                             {mockArticles.length === 0 ? (
-                                <div className="text-center py-10 text-gray-400 text-sm">작성한 글이 없어요</div>
+                                <div className="text-center py-10 text-gray-400 text-sm">
+                                    작성한 글이 없어요
+                                </div>
                             ) : (
                                 mockArticles.map(article => (
                                     <div key={article.id} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
                                         <div>
-                                            <p className="text-sm font-medium text-gray-800 hover:text-green-600 cursor-pointer">{article.title}</p>
-                                            <p className="text-xs text-gray-400 mt-0.5">{article.createdAt} · 좋아요 {article.likes}</p>
+                                            <p className="text-sm font-medium text-gray-800 hover:text-green-600 cursor-pointer">
+                                                {article.title}
+                                            </p>
+                                            <p className="text-xs text-gray-400 mt-0.5">
+                                                {article.createdAt} · 좋아요 {article.likes}
+                                            </p>
                                         </div>
                                         <span className="text-gray-300">›</span>
                                     </div>
@@ -102,14 +136,22 @@ function MyPage() {
                     {/* 내가 쓴 댓글 탭 */}
                     {activeTab === "내가 쓴 댓글" && (
                         <div className="flex flex-col gap-3">
-                            {mockComments.length === 0 ? (
-                                <div className="text-center py-10 text-gray-400 text-sm">작성한 댓글이 없어요</div>
+                            {comments.length === 0 ? (
+                                <div className="text-center py-10 text-gray-400 text-sm">
+                                    작성한 댓글이 없어요
+                                </div>
                             ) : (
-                                mockComments.map(comment => (
+                                comments.map(comment => (
                                     <div key={comment.id} className="py-3 border-b border-gray-100 last:border-0">
-                                        <p className="text-xs text-gray-400 mb-1">{comment.articleTitle}</p>
-                                        <p className="text-sm text-gray-700">{comment.content}</p>
-                                        <p className="text-xs text-gray-400 mt-1">{comment.createdAt}</p>
+                                        <p className="text-xs text-gray-400 mb-1">
+                                            {comment.articleTitle || "게시글"}
+                                        </p>
+                                        <p className="text-sm text-gray-700">
+                                            {comment.content}
+                                        </p>
+                                        <p className="text-xs text-gray-400 mt-1">
+                                            {comment.createdAt}
+                                        </p>
                                     </div>
                                 ))
                             )}
