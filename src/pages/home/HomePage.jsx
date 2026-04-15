@@ -5,6 +5,8 @@ import { getUserDevicesApi, deleteDeviceApi } from "../../api/deviceApi";
 import AddDeviceModal from "../../components/device/AddDeviceModal";
 import SelectPlantModal from "../../components/device/SelectPlantModal";
 
+const ICONS = ["🍓", "🌿", "🌱", "🌻", "🍅", "🥬", "🌶️", "🌸"];
+
 const STAGE_LABEL = {
     SEED: "씨앗",
     GERMINATION: "발아",
@@ -21,7 +23,12 @@ const SPECIES_EMOJI = {
 };
 
 function DeviceCard({ device, onDelete, onPlantRegister }) {
-    const emoji = device.plant ? (SPECIES_EMOJI[device.plant.species] || "🌱") : "🍓";
+    const savedIconIndex = localStorage.getItem(`device_icon_${device.serialNumber}`);
+    const emoji = (savedIconIndex !== null && savedIconIndex !== undefined)
+        ? (ICONS[parseInt(savedIconIndex)] || "🌱")
+        : device.plant
+            ? (SPECIES_EMOJI[device.plant.species] || "🌱")
+            : "🌱";
 
     return (
         <div className="bg-white rounded-xl border border-gray-200 p-4 relative">

@@ -35,6 +35,9 @@ function AddDeviceModal({ onClose, onSuccess }) {
 
         try {
             await registerDeviceApi(`PLANTI-${form.serial}`, form.nickname);
+            const iconKey = `device_icon_PLANTI-${form.serial}`;
+            localStorage.setItem(iconKey, String(form.icon));
+            console.log("아이콘 저장:", iconKey, "->", form.icon);
             setStep(3);
         } catch (err) {
             setError(err.response?.data?.message || err.response?.data || "기기 등록에 실패했습니다.");
@@ -51,7 +54,6 @@ function AddDeviceModal({ onClose, onSuccess }) {
                 <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl">✕</button>
                 <h2 className="text-lg font-bold text-gray-800 mb-5">🌱 기기 추가</h2>
 
-                {/* 스텝 인디케이터 */}
                 <div className="flex items-center mb-6">
                     {STEPS.map((label, i) => (
                         <div key={i} className="flex items-center flex-1 last:flex-none">
@@ -69,7 +71,6 @@ function AddDeviceModal({ onClose, onSuccess }) {
                     ))}
                 </div>
 
-                {/* Step 1: 기기 정보 */}
                 {step === 1 && (
                     <div className="flex flex-col gap-4">
                         {error && <div className="bg-red-50 text-red-500 text-sm rounded-lg px-4 py-2">{error}</div>}
@@ -127,7 +128,6 @@ function AddDeviceModal({ onClose, onSuccess }) {
                     </div>
                 )}
 
-                {/* Step 2: 연결 확인 */}
                 {step === 2 && (
                     <div className="flex flex-col items-center py-4">
                         <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center text-3xl mb-6">
@@ -144,7 +144,6 @@ function AddDeviceModal({ onClose, onSuccess }) {
                     </div>
                 )}
 
-                {/* Step 3: 완료 */}
                 {step === 3 && (
                     <div className="flex flex-col items-center py-4 gap-4">
                         <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
