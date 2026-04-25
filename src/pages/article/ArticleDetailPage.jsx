@@ -7,7 +7,8 @@ import {
   toggleArticleLikeApi, 
   createCommentApi,
   deleteArticleApi, 
-  deleteCommentApi 
+  deleteCommentApi,
+  updateCommentApi // 정식 추가된 API 사용
 } from '../../api/articleApi';
 
 let isFetchingInternal = false;
@@ -22,16 +23,18 @@ const ArticleDetailPage = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const commentsPerPage = 5;
-  const currentUserId = localStorage.getItem("userId");
+
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingContent, setEditingContent] = useState("");
+
+  // ★ 수정 포인트: userId가 null인 문제를 해결하기 위해 username으로 본인 확인
+  const currentUsername = localStorage.getItem("username");
 
   useEffect(() => {
     if (isFetchingInternal) return;
     fetchDetail();
     setCurrentPage(1);
-
-    return () => {
-      isFetchingInternal = false;
-    };
+    return () => { isFetchingInternal = false; };
   }, [id]);
 
   const fetchDetail = async () => {
@@ -40,9 +43,8 @@ const ArticleDetailPage = () => {
     try {
       const response = await getArticleDetailApi(id, token);
       setPost(response.data);
-      
-      // [디버깅용] 버튼이 안 보일 때 콘솔에서 ID가 일치하는지 확인
-      console.log("내 ID:", currentUserId, "글 작성자 ID:", response.data.authorId);
+      // 디버깅용 로그
+      console.log("현재 접속자:", currentUsername, "작성자:", response.data.authorUsername);
     } catch (error) {
       console.error("상세조회 실패:", error);
       isFetchingInternal = false;
@@ -56,31 +58,9 @@ const ArticleDetailPage = () => {
       await deleteArticleApi(id, token);
       alert("삭제되었습니다.");
       navigate('/articles');
-    } catch (error) {
-      alert("삭제 실패: 권한이 없습니다.");
+    } catch (error) { 
+      alert("삭제 실패: 권한이 없습니다."); 
     }
-  };
-
-  const handleDeleteComment = async (commentId) => {
-    if (!window.confirm("댓글을 삭제하시겠습니까?")) return;
-    const token = localStorage.getItem("token");
-    try {
-      await deleteCommentApi(commentId, token);
-      isFetchingInternal = false;
-      fetchDetail();
-    } catch (error) {
-      alert("댓글 삭제 실패");
-    }
-  };
-
-  const handleLike = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return alert("로그인이 필요합니다.");
-    try {
-      await toggleArticleLikeApi(id, token);
-      isFetchingInternal = false; 
-      fetchDetail(); 
-    } catch (error) { console.error(error); }
   };
 
   const handleCommentSubmit = async () => {
@@ -94,11 +74,53 @@ const ArticleDetailPage = () => {
     } catch (error) { console.error(error); }
   };
 
+  const handleDeleteComment = async (commentId) => {
+    if (!window.confirm("댓글을 삭제하시겠습니까?")) return;
+    const token = localStorage.getItem("token");
+    try {
+      await deleteCommentApi(commentId, token);
+      isFetchingInternal = false;
+      fetchDetail();
+    } catch (error) { alert("댓글 삭제 실패"); }
+  };
+
+  const startEditComment = (c) => {
+    setEditingCommentId(c.id);
+    setEditingContent(c.content);
+  };
+
+  const cancelEditComment = () => {
+    setEditingCommentId(null);
+    setEditingContent("");
+  };
+
+  const handleUpdateComment = async (commentId) => {
+    const token = localStorage.getItem("token");
+    try {
+      // ★ 수정 포인트: 정식 updateCommentApi 호출
+      await updateCommentApi(commentId, { content: editingContent }, token);
+      setEditingCommentId(null);
+      isFetchingInternal = false;
+      fetchDetail();
+    } catch (error) {
+      alert("댓글 수정 실패");
+    }
+  };
+
+  const handleLike = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return alert("로그인이 필요합니다.");
+    try {
+      await toggleArticleLikeApi(id, token);
+      isFetchingInternal = false; 
+      fetchDetail(); 
+    } catch (error) { console.error(error); }
+  };
+
   if (!post) return <div className="p-20 text-center font-bold text-gray-400">로딩 중...</div>;
 
   const allComments = post.comments || [];
   const currentComments = allComments.slice((currentPage-1)*commentsPerPage, currentPage*commentsPerPage);
-  const totalPages = Math.ceil(allComments.length / commentsPerPage);
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] pt-6 pb-16 px-6 font-sans">
@@ -109,14 +131,12 @@ const ArticleDetailPage = () => {
             <span className="group-hover:-translate-x-1 transition-transform">←</span> 목록으로 돌아가기
           </button>
 
-          {/* == 연산자로 타입 체크 완화 (문자열 vs 숫자 대응) */}
-          {post.authorId == currentUserId && (
-            <button 
-              onClick={handleDeleteArticle}
-              className="text-xs font-bold text-red-500 bg-red-50 px-4 py-2 rounded-xl hover:bg-red-100 transition-all"
-            >
-              게시글 삭제
-            </button>
+          {/* ★ 수정 포인트: ID 대신 Username으로 비교하여 버튼 노출 제어 */}
+          {post.authorUsername === currentUsername && (
+            <div className="flex gap-2">
+              <button onClick={() => navigate(`/articles/edit/${id}`)} className="text-xs font-bold text-gray-500 bg-gray-100 px-4 py-2 rounded-xl hover:bg-gray-200 transition-all shadow-sm">게시글 수정</button>
+              <button onClick={handleDeleteArticle} className="text-xs font-bold text-red-500 bg-red-50 px-4 py-2 rounded-xl hover:bg-red-100 transition-all shadow-sm">게시글 삭제</button>
+            </div>
           )}
         </div>
 
@@ -141,12 +161,7 @@ const ArticleDetailPage = () => {
 
           {post.imageUrl && (
             <div className="flex justify-center mb-12">
-              <img 
-                src={post.imageUrl.startsWith('http') ? post.imageUrl : `${SERVER_URL}${post.imageUrl}`}
-                className="max-w-full rounded-[2.5rem] border border-gray-50 shadow-sm cursor-pointer"
-                onClick={() => setIsOpen(true)}
-                alt="post"
-              />
+              <img src={post.imageUrl.startsWith('http') ? post.imageUrl : `${SERVER_URL}${post.imageUrl}`} className="max-w-full rounded-[2.5rem] border border-gray-50 shadow-sm" alt="post" />
             </div>
           )}
 
@@ -161,6 +176,7 @@ const ArticleDetailPage = () => {
 
         <section className="bg-white rounded-[2.5rem] p-12 shadow-sm border border-gray-100">
           <h2 className="text-2xl font-bold text-gray-900 mb-10">💬 댓글 <span className="text-green-600">{allComments.length}</span></h2>
+          
           <div className="flex gap-4 mb-12 bg-gray-50 p-4 rounded-[2rem]">
             <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="지식을 나누어주세요!" className="flex-1 bg-transparent p-4 text-sm outline-none resize-none h-28" />
             <button onClick={handleCommentSubmit} className="px-10 bg-green-600 text-white rounded-2xl font-bold hover:bg-green-700 h-28">등록</button>
@@ -174,14 +190,32 @@ const ArticleDetailPage = () => {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-bold text-gray-800">{c.authorUsername}</span>
-                      {/* == 연산자로 댓글 삭제 버튼 노출 보장 */}
-                      {c.authorId == currentUserId && (
-                        <button onClick={() => handleDeleteComment(c.id)} className="text-[10px] text-red-300 hover:text-red-500 font-bold">삭제</button>
+                      {/* ★ 수정 포인트: 댓글도 Username으로 비교 */}
+                      {c.authorUsername === currentUsername && (
+                        <div className="flex gap-2">
+                          <button onClick={() => startEditComment(c)} className="text-[10px] text-gray-400 hover:text-green-600 font-bold">수정</button>
+                          <button onClick={() => handleDeleteComment(c.id)} className="text-[10px] text-red-300 hover:text-red-500 font-bold">삭제</button>
+                        </div>
                       )}
                     </div>
                     <span className="text-[10px] text-gray-400">{c.createdAt}</span>
                   </div>
-                  <p className="text-[15px] text-gray-600 leading-relaxed">{c.content}</p>
+
+                  {editingCommentId === c.id ? (
+                    <div className="mt-2">
+                      <textarea 
+                        value={editingContent} 
+                        onChange={(e) => setEditingContent(e.target.value)}
+                        className="w-full bg-gray-50 border border-green-100 rounded-xl p-3 text-sm outline-none resize-none"
+                      />
+                      <div className="flex justify-end gap-2 mt-2">
+                        <button onClick={cancelEditComment} className="text-xs font-bold text-gray-400">취소</button>
+                        <button onClick={() => handleUpdateComment(c.id)} className="text-xs font-bold text-green-600">완료</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-[15px] text-gray-600 leading-relaxed whitespace-pre-wrap">{c.content}</p>
+                  )}
                 </div>
               </div>
             ))}
