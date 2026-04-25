@@ -4,6 +4,13 @@ import { createPlantApi } from "../../api/plantApi";
 
 const CATEGORY_FILTERS = ["전체", "채소", "허브", "과일", "관상식물"];
 
+const CATEGORY_MAP = {
+    "채소": "VEGETABLE",
+    "과일": "FRUIT",
+    "허브": "HERB",
+    "관상식물": "ORNAMENTAL",
+};
+
 const SPECIES_EMOJI = {
     "방울토마토": "🍅",
     "청상추": "🥬",
@@ -50,9 +57,13 @@ function SelectPlantModal({ serialNumber, onClose, onSuccess }) {
     };
 
     const filtered = species.filter(sp => {
-        const matchSearch = (sp.name || sp.koreanName || "").includes(search) ||
-            (sp.englishName || "").toLowerCase().includes(search.toLowerCase());
-        const matchCategory = category === "전체" || (sp.category === category);
+        const matchSearch =
+            (sp.name || "").includes(search);
+
+        const matchCategory =
+            category === "전체" ||
+            sp.category === CATEGORY_MAP[category];
+
         return matchSearch && matchCategory;
     });
 
