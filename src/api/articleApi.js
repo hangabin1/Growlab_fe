@@ -28,7 +28,14 @@ export const createArticleApi = (formData, token) =>
         withCredentials: true
     });
 
-// ★ 좋아요 토글 (SERVER_URL 대신 BASE_URL 사용)
+// 게시글 삭제 
+export const deleteArticleApi = (id, token) =>
+    axios.delete(`${BASE_URL}/articles/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true
+    });
+
+// 좋아요 토글
 export const toggleArticleLikeApi = (id, token) => 
     axios.post(`${BASE_URL}/articles/${id}/likes`, {}, {
         headers: { Authorization: `Bearer ${token}` },
@@ -48,12 +55,12 @@ export const getCommentsByArticleApi = (articleId) =>
 export const createCommentApi = (articleId, data, token) =>
     axios.post(`${BASE_URL}/articles/${articleId}/comments`, data, {
         headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true // ★ 추가
+        withCredentials: true
     });
 
-// 댓글 삭제
+// 댓글 삭제 
 export const deleteCommentApi = (commentId, token) =>
     axios.delete(`${BASE_URL}/comments/${commentId}`, {
         headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true // ★ 추가
+        withCredentials: true
     });
