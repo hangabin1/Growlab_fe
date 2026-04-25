@@ -1,9 +1,9 @@
 import { Route, Routes } from "react-router-dom";
 import HomePage from "../pages/home/HomePage";
-import ArticleListPage from "../pages/articles/ArticleListPage";
-import AdminPage from "../pages/admin/AdminPage";
-import ArticleManagementPage from "../pages/admin/admin-management/ArticleManagementPage";
-import ArticleCreatePage from "../pages/admin/admin-management/ArticleCreatePage";
+import ArticleListPage from "../pages/article/ArticleListPage";
+// import AdminPage from "../pages/admin/AdminPage";
+import ArticleDetailPage from '../pages/article/ArticleDetailPage';
+import ArticleCreatePage from '../pages/article/ArticleCreatePage';
 import LoginPage from "../pages/auth/LoginPage";
 import SignUpPage from "../pages/auth/SignUpPage";
 import MyPage from "../pages/mypage/MyPage";
@@ -17,11 +17,15 @@ function AppRoutes() {
             <Route path="/" element={<HomePage />} />
 
             {/* admin */}
-            <Route path="/admin" element={<AdminPage />} />
-            <Route path="/admin/articles" element={<ArticleManagementPage />} />
-            <Route path="/admin/articles/create" element={<ArticleCreatePage />} />
+            {/* <Route path="/admin" element={<AdminPage />} /> */}
+            {/* <Route path="/admin/articles" element={<ArticleManagementPage />} /> */}
+            {/* <Route path="/admin/articles/create" element={<ArticleCreatePage />} /> */}
 
+            {/* article*/}
             <Route path="/articles" element={<ArticleListPage />} />
+            {/* articles/write protected route 적용 필요 */}
+            <Route path="/articles/write" element={<ArticleCreatePage />} />
+            <Route path="/articles/:id" element={<ArticleDetailPage />} />
 
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignUpPage />} />
