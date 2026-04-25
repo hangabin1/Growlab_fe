@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUnreadCountApi } from "../../api/noticeApi";
 import { getUserDevicesApi, deleteDeviceApi } from "../../api/deviceApi";
+import { deletePlantApi } from "../../api/plantApi";
 import AddDeviceModal from "../../components/device/AddDeviceModal";
 import SelectPlantModal from "../../components/device/SelectPlantModal";
 
@@ -22,7 +23,7 @@ const SPECIES_EMOJI = {
     "브로콜리": "🥦",
 };
 
-function DeviceCard({ device, onDelete, onPlantRegister }) {
+function DeviceCard({ device, onDelete, onPlantRegister, onPlantDelete }) {
     const savedIconIndex = localStorage.getItem(`device_icon_${device.serialNumber}`);
     const emoji = (savedIconIndex !== null && savedIconIndex !== undefined)
         ? (ICONS[parseInt(savedIconIndex)] || "🌱")
@@ -48,6 +49,11 @@ function DeviceCard({ device, onDelete, onPlantRegister }) {
                             <span className="text-xs px-1.5 py-0.5 rounded-full bg-green-50 text-green-600 font-medium">
                                 {STAGE_LABEL[device.plant.plantStage] || device.plant.plantStage}
                             </span>
+                            <button
+                                onClick={() => onPlantDelete(device.plant.id)}
+                                className="text-xs text-red-400 hover:text-red-600 ml-1"
+                                title="식물 삭제"
+                            >🗑</button>
                         </div>
                     ) : (
                         <button
@@ -111,6 +117,14 @@ function HomePage() {
         } catch (err) { console.error(err); }
     };
 
+    const handlePlantDelete = async (plantId) => {
+        if (!window.confirm("식물을 삭제할까요?")) return;
+        try {
+            await deletePlantApi(plantId);
+            await fetchDevices();
+        } catch (err) { console.error(err); }
+    };
+
     const handlePlantRegister = (serialNumber) => {
         setPlantRegisterSerial(serialNumber);
     };
@@ -161,12 +175,7 @@ function HomePage() {
                     <button
                         onClick={() => {
                             const token = localStorage.getItem("token");
-
-                            if (!token) {
-                                navigate("/login");
-                                return;
-                            }
-
+                            if (!token) { navigate("/login"); return; }
                             setShowAddModal(true);
                         }}
                         className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
@@ -178,15 +187,10 @@ function HomePage() {
                     <div className="bg-white rounded-xl border border-gray-200 p-10 text-center">
                         <div className="text-4xl mb-3">🌱</div>
                         <p className="text-gray-400 text-sm">등록된 기기가 없어요</p>
-                        <button 
+                        <button
                             onClick={() => {
                                 const token = localStorage.getItem("token");
-
-                                if (!token) {
-                                    navigate("/login");
-                                    return;
-                                }
-
+                                if (!token) { navigate("/login"); return; }
                                 setShowAddModal(true);
                             }}
                             className="mt-4 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
@@ -201,6 +205,7 @@ function HomePage() {
                                 device={device}
                                 onDelete={handleDelete}
                                 onPlantRegister={handlePlantRegister}
+                                onPlantDelete={handlePlantDelete}
                             />
                         ))}
                     </div>
