@@ -81,3 +81,12 @@ export const deleteCommentApi = (commentId, token) =>
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true
     });
+
+    // 내 게시글 조회
+export const getMyArticlesApi = (page = 0, size = 10) => {
+    const token = localStorage.getItem("token");
+    return axios.get(`${BASE_URL}/articles/my?page=${page}&size=${size}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true
+    });
+};
