@@ -9,6 +9,7 @@ import SignUpPage from "../pages/auth/SignUpPage";
 import MyPage from "../pages/mypage/MyPage";
 import ProtectedRoute from "../components/layouts/ProtectedRoute";
 import NotificationPage from "../pages/notifications/NotificationPage";
+import DiaryPage from "../pages/diary/DiaryPage";
 
 function AppRoutes() {
     return (
@@ -37,6 +38,8 @@ function AppRoutes() {
             {/* 마이페이지 및 알림 (로그인 필요) */}
             <Route path="/mypage" element={<ProtectedRoute><MyPage /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><NotificationPage /></ProtectedRoute>} />
+
+            <Route path="/diary" element={<ProtectedRoute><DiaryPage /></ProtectedRoute>} />
         </Routes>
     )
 }
