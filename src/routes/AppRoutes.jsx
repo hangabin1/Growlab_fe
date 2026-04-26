@@ -1,9 +1,9 @@
+import React from "react";
 import { Route, Routes } from "react-router-dom";
 import HomePage from "../pages/home/HomePage";
-import ArticleListPage from "../pages/articles/ArticleListPage";
-import AdminPage from "../pages/admin/AdminPage";
-import ArticleManagementPage from "../pages/admin/admin-management/ArticleManagementPage";
-import ArticleCreatePage from "../pages/admin/admin-management/ArticleCreatePage";
+import ArticleListPage from "../pages/article/ArticleListPage";
+import ArticleDetailPage from '../pages/article/ArticleDetailPage';
+import ArticleCreatePage from '../pages/article/ArticleCreatePage';
 import LoginPage from "../pages/auth/LoginPage";
 import SignUpPage from "../pages/auth/SignUpPage";
 import MyPage from "../pages/mypage/MyPage";
@@ -14,21 +14,29 @@ import DiaryPage from "../pages/diary/DiaryPage";
 function AppRoutes() {
     return (
         <Routes>
-            {/* home */}
+            {/* 메인 홈 */}
             <Route path="/" element={<HomePage />} />
 
-            {/* admin */}
-            <Route path="/admin" element={<AdminPage />} />
-            <Route path="/admin/articles" element={<ArticleManagementPage />} />
-            <Route path="/admin/articles/create" element={<ArticleCreatePage />} />
-
+            {/* 게시글 관련 */}
             <Route path="/articles" element={<ArticleListPage />} />
+            <Route path="/articles/:id" element={<ArticleDetailPage />} />
+            
+            {/* 글쓰기 및 수정 (로그인 필요하도록 ProtectedRoute 적용) */}
+            <Route 
+                path="/articles/write" 
+                element={<ProtectedRoute><ArticleCreatePage /></ProtectedRoute>} 
+            />
+            <Route 
+                path="/articles/edit/:id" 
+                element={<ProtectedRoute><ArticleCreatePage /></ProtectedRoute>} 
+            />
 
+            {/* 인증 관련 */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignUpPage />} />
 
+            {/* 마이페이지 및 알림 (로그인 필요) */}
             <Route path="/mypage" element={<ProtectedRoute><MyPage /></ProtectedRoute>} />
-
             <Route path="/notifications" element={<ProtectedRoute><NotificationPage /></ProtectedRoute>} />
 
             <Route path="/diary" element={<ProtectedRoute><DiaryPage /></ProtectedRoute>} />

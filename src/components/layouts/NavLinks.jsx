@@ -17,7 +17,7 @@ function NavLinks({ onClick }) {
     return (
         <>
             <li><Link className={baseStyle} to="/" onClick={onClick}>🏠 홈</Link></li>
-            <li><Link className={baseStyle} to="/community" onClick={onClick}>👥 커뮤니티</Link></li>
+            <li><Link className={baseStyle} to="/articles" onClick={onClick}>👥 커뮤니티</Link></li>
             <li><Link className={baseStyle} to="/notifications" onClick={onClick}>🔔 알림</Link></li>
             {token ? (
                 <>
