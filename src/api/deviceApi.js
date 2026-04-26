@@ -6,5 +6,8 @@ const authHeader = () => ({
     headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
 });
 
+export const getUserDevicesApi = () => axios.get(API_BASE, authHeader());
 export const registerDeviceApi = (serialNumber, deviceNickname) =>
     axios.post(`${API_BASE}/register`, { serialNumber, deviceNickname }, authHeader());
+export const deleteDeviceApi = (serialNumber) =>
+    axios.delete(`${API_BASE}/${serialNumber}`, authHeader());
