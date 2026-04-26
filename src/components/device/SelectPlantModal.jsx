@@ -221,7 +221,7 @@ function SelectPlantModal({ serialNumber, onClose, onSuccess }) {
                                 )}
 
                                 {/* 스탯 */}
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className="flex flex-col gap-2">
                                     {selected.growthDays && (
                                         <div className="bg-gray-50 rounded-lg p-2.5 text-center">
                                             <div className="text-xs text-gray-400">⏱ 재배 기간</div>
@@ -233,6 +233,11 @@ function SelectPlantModal({ serialNumber, onClose, onSuccess }) {
                                             <div className="text-xs text-gray-400">🧩 난이도</div>
                                             <div className="text-sm font-bold text-gray-700 mt-0.5">{DIFFICULTY_LABEL[selected.difficulty] || selected.difficulty}</div>
                                         </div>
+                                    )}
+                                    {selected.aiPromptGuideline && (
+                                        <p className="text-xs text-gray-500 leading-relaxed text-center">
+                                            {selected.aiPromptGuideline}
+                                        </p>
                                     )}
                                     {selected.temperature && (
                                         <div className="bg-gray-50 rounded-lg p-2.5 text-center">

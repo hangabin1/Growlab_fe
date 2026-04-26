@@ -48,10 +48,14 @@ function DiaryPage() {
         }
         setError("");
         try {
+            const payload = {
+                ...form,
+                targetDate: `${form.targetDate} 00:00:00`, // 추가
+            };
             if (editingDiary) {
-                await updateDiaryApi(selectedPlant.id, editingDiary.id, form);
+                await updateDiaryApi(selectedPlant.id, editingDiary.id, payload);
             } else {
-                await createDiaryApi(selectedPlant.id, form);
+                await createDiaryApi(selectedPlant.id, payload);
             }
             setShowForm(false);
             setEditingDiary(null);
