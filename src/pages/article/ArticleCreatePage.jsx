@@ -4,16 +4,15 @@ import { createArticleApi, getArticleDetailApi, updateArticleApi } from '../../a
 
 const ArticleCreatePage = () => {
   const navigate = useNavigate();
-  const { id } = useParams(); // URL에 id가 있으면 수정 모드
+  const { id } = useParams(); 
   const isEditMode = !!id;
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [category, setCategory] = useState('재배 노하우');
-  const [file, setFile] = useState(null); 
-  const [preview, setPreview] = useState(""); 
+  const [files, setFiles] = useState([]); 
+  const [previews, setPreviews] = useState([]); 
 
-  // 수정 모드일 경우 기존 데이터 불러오기
   useEffect(() => {
     if (isEditMode) {
       fetchPostDetail();
@@ -21,16 +20,20 @@ const ArticleCreatePage = () => {
   }, [id]);
 
   const fetchPostDetail = async () => {
-    const token = localStorage.getItem("token"); // 상세 조회 시에도 최신 토큰 사용
+    const token = localStorage.getItem("token"); 
     try {
       const response = await getArticleDetailApi(id, token);
       const post = response.data;
       setTitle(post.title);
       setContent(post.content);
       setCategory(post.category);
-      if (post.imageUrl) {
+
+      if (post.images && post.images.length > 0) {
         const SERVER_URL = "http://localhost:8080";
-        setPreview(post.imageUrl.startsWith('http') ? post.imageUrl : `${SERVER_URL}${post.imageUrl}`);
+        const existingPreviews = post.images.map(img => 
+          img.imageUrl.startsWith('http') ? img.imageUrl : `${SERVER_URL}${img.imageUrl}`
+        );
+        setPreviews(existingPreviews);
       }
     } catch (error) {
       console.error("데이터 로드 실패:", error);
@@ -39,18 +42,27 @@ const ArticleCreatePage = () => {
   };
 
   const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-      setPreview(URL.createObjectURL(selectedFile)); 
-    }
+    const selectedFiles = Array.from(e.target.files);
+    if (selectedFiles.length > 0) {
+    setFiles((prevFiles) => [...prevFiles, ...selectedFiles]);
+
+    const newPreviews = selectedFiles.map((file) => URL.createObjectURL(file));
+    setPreviews((prevPreviews) => [...prevPreviews, ...newPreviews]);
+
+    e.target.value = "";
+    
+  }
+};
+
+  const handleRemoveFile = (index) => {
+    setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
+    setPreviews((prevPreviews) => prevPreviews.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return alert("제목과 내용을 입력하세요.");
 
-    // ★ 핵심 수정: 전송 직전에 localStorage에서 최신 토큰을 가져옵니다.
     const currentToken = localStorage.getItem("token");
     if (!currentToken) {
       alert("로그인이 필요합니다.");
@@ -61,15 +73,14 @@ const ArticleCreatePage = () => {
     const formData = new FormData();
     const articleData = { title, content, category };
     
-    // JSON 데이터를 Blob으로 감싸서 전달 (Spring Boot의 @RequestPart와 매칭)
     formData.append(
       'articleData', 
       new Blob([JSON.stringify(articleData)], { type: 'application/json' })
     );
 
-    if (file) {
+    files.forEach((file) => {
       formData.append('file', file);
-    }
+    });
 
     try {
       if (isEditMode) {
@@ -85,7 +96,6 @@ const ArticleCreatePage = () => {
     } catch (error) {
       console.error("작업 실패:", error);
       
-      // 서버에서 전달한 에러 메시지가 있다면 표시, 없으면 기본 메시지
       if (error.response?.status === 401) {
         alert("수정 권한이 없거나 세션이 만료되었습니다.");
       } else {
@@ -135,19 +145,21 @@ const ArticleCreatePage = () => {
             <div className="flex flex-col gap-4">
               <label className="w-fit cursor-pointer bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 px-4 py-2 rounded-xl text-xs transition-all flex items-center gap-2">
                 📸 {isEditMode ? "사진 변경하기" : "사진 첨부하기"}
-                <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
+                <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" multiple />
               </label>
               
-              {preview && (
-                <div className="relative w-40 h-40 rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
-                  <img src={preview} alt="미리보기" className="w-full h-full object-cover" />
-                  <button 
-                    type="button"
-                    onClick={() => {setFile(null); setPreview("");}}
-                    className="absolute top-1 right-1 bg-black/50 text-white w-6 h-6 rounded-full text-xs hover:bg-black/70"
-                  >✕</button>
-                </div>
-              )}
+              <div className="flex flex-wrap gap-4">
+                {previews.map((url, index) => (
+                  <div key={index} className="relative w-40 h-40 rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+                    <img src={url} alt={`미리보기 ${index}`} className="w-full h-full object-cover" />
+                    <button 
+                      type="button"
+                      onClick={() => handleRemoveFile(index)}
+                      className="absolute top-1 right-1 bg-black/50 text-white w-6 h-6 rounded-full text-xs hover:bg-black/70"
+                    >✕</button>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <textarea 
