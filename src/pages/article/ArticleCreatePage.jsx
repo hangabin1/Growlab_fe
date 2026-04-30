@@ -13,6 +13,9 @@ const ArticleCreatePage = () => {
   const [files, setFiles] = useState([]); 
   const [previews, setPreviews] = useState([]); 
 
+  // 서버 주소 설정 (환경 변수 권장)
+  const SERVER_URL = "http://localhost:8080";
+
   useEffect(() => {
     if (isEditMode) {
       fetchPostDetail();
@@ -28,11 +31,27 @@ const ArticleCreatePage = () => {
       setContent(post.content);
       setCategory(post.category);
 
+      /**
+       * ✅ 수정된 이미지 경로 보정 로직 (startsWith 에러 해결)
+       */
       if (post.images && post.images.length > 0) {
-        const SERVER_URL = "http://localhost:8080";
-        const existingPreviews = post.images.map(img => 
-          img.imageUrl.startsWith('http') ? img.imageUrl : `${SERVER_URL}${img.imageUrl}`
-        );
+        const existingPreviews = post.images.map(img => {
+          // 1. img.imgUrl 또는 img.imageUrl 중 존재하는 필드 사용 (방어 코드)
+          const rawUrl = img.imgUrl || img.imageUrl || ""; 
+          
+          if (!rawUrl) return null;
+
+          // 2. 이미 http로 시작하면 그대로 반환
+          if (rawUrl.startsWith('http')) return rawUrl;
+
+          // 3. 경로 보정 (/api/files/ -> /uploads/) 및 SERVER_URL 결합
+          const correctedPath = rawUrl.replace('/api/files/', '/uploads/');
+          const baseUrl = SERVER_URL.endsWith('/') ? SERVER_URL.slice(0, -1) : SERVER_URL;
+          const path = correctedPath.startsWith('/') ? correctedPath : `/${correctedPath}`;
+          
+          return `${baseUrl}${path}`;
+        }).filter(url => url !== null); // 유효하지 않은 경로는 필터링
+
         setPreviews(existingPreviews);
       }
     } catch (error) {
@@ -44,15 +63,14 @@ const ArticleCreatePage = () => {
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
     if (selectedFiles.length > 0) {
-    setFiles((prevFiles) => [...prevFiles, ...selectedFiles]);
+      setFiles((prevFiles) => [...prevFiles, ...selectedFiles]);
 
-    const newPreviews = selectedFiles.map((file) => URL.createObjectURL(file));
-    setPreviews((prevPreviews) => [...prevPreviews, ...newPreviews]);
+      const newPreviews = selectedFiles.map((file) => URL.createObjectURL(file));
+      setPreviews((prevPreviews) => [...prevPreviews, ...newPreviews]);
 
-    e.target.value = "";
-    
-  }
-};
+      e.target.value = "";
+    }
+  };
 
   const handleRemoveFile = (index) => {
     setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
@@ -84,18 +102,15 @@ const ArticleCreatePage = () => {
 
     try {
       if (isEditMode) {
-        // 수정 모드: PUT 호출
         await updateArticleApi(id, formData, currentToken);
         alert("글이 성공적으로 수정되었습니다!");
       } else {
-        // 작성 모드: POST 호출
         await createArticleApi(formData, currentToken);
         alert("글이 성공적으로 등록되었습니다!");
       }
       navigate(isEditMode ? `/articles/${id}` : '/articles');
     } catch (error) {
       console.error("작업 실패:", error);
-      
       if (error.response?.status === 401) {
         alert("수정 권한이 없거나 세션이 만료되었습니다.");
       } else {
@@ -117,7 +132,6 @@ const ArticleCreatePage = () => {
         </header>
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* 카테고리 선택 */}
           <div className="flex gap-3">
             {['재배 노하우', '자유 게시판', '질문/답변'].map((cat) => (
               <button
