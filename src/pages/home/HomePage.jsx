@@ -17,19 +17,24 @@ const STAGE_LABEL = {
 const SPECIES_EMOJI = {
     "방울토마토": "🍅",
     "청상추": "🥬",
+    "적상추": "🥬",
     "바질": "🌿",
     "딸기": "🍓",
     "파프리카": "🌶️",
     "브로콜리": "🥦",
+    "고추": "🌶️",
+    "블루베리": "🫐",
+    "페퍼민트": "🌿",
+    "청경채": "🥬",
+    "테이블야자": "🌴",
+    "산세베리아 스투키": "🪴",
 };
 
 function DeviceCard({ device, onDelete, onPlantRegister, onPlantDelete }) {
     const savedIconIndex = localStorage.getItem(`device_icon_${device.serialNumber}`);
     const emoji = (savedIconIndex !== null && savedIconIndex !== undefined)
         ? (ICONS[parseInt(savedIconIndex)] || "🌱")
-        : device.plant
-            ? (SPECIES_EMOJI[device.plant.species] || "🌱")
-            : "🌱";
+        : "🌱";
 
     return (
         <div className="bg-white rounded-xl border border-gray-200 p-4 relative">
@@ -45,7 +50,9 @@ function DeviceCard({ device, onDelete, onPlantRegister, onPlantDelete }) {
                     <div className="text-xs text-gray-400">{device.serialNumber}</div>
                     {device.plant ? (
                         <div className="flex items-center gap-1 mt-0.5">
-                            <span className="text-xs text-gray-600">🌱 {device.plant.name}</span>
+                            <span className="text-xs text-gray-600">
+                                {SPECIES_EMOJI[device.plant.species] || "🌱"} {device.plant.name}
+                            </span>
                             <span className="text-xs px-1.5 py-0.5 rounded-full bg-green-50 text-green-600 font-medium">
                                 {STAGE_LABEL[device.plant.plantStage] || device.plant.plantStage}
                             </span>
