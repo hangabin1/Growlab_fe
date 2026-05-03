@@ -2,6 +2,22 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getPlantsApi, getDiariesApi, createDiaryApi, updateDiaryApi, deleteDiaryApi } from "../../api/diaryApi";
 
+const SPECIES_EMOJI = {
+    "방울토마토": "🍅",
+    "청상추": "🥬",
+    "적상추": "🥬",
+    "바질": "🌿",
+    "딸기": "🍓",
+    "파프리카": "🌶️",
+    "브로콜리": "🥦",
+    "고추": "🌶️",
+    "블루베리": "🫐",
+    "페퍼민트": "🌿",
+    "청경채": "🥬",
+    "테이블야자": "🌴",
+    "산세베리아 스투키": "🪴",
+};
+
 function DiaryPage() {
     const navigate = useNavigate();
     const [plants, setPlants] = useState([]);
@@ -50,7 +66,7 @@ function DiaryPage() {
         try {
             const payload = {
                 ...form,
-                targetDate: `${form.targetDate} 00:00:00`, // 추가
+                targetDate: `${form.targetDate} 00:00:00`,
             };
             if (editingDiary) {
                 await updateDiaryApi(selectedPlant.id, editingDiary.id, payload);
@@ -115,10 +131,16 @@ function DiaryPage() {
                     {plants.map(plant => (
                         <button
                             key={plant.id}
-                            onClick={() => setSelectedPlant(plant)}
+                            onClick={() => {
+                                setSelectedPlant(plant);
+                                setSelectedDiary(null);
+                                setShowForm(false);
+                            }}
                             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors
                                 ${selectedPlant?.id === plant.id ? "bg-green-600 text-white" : "bg-white border border-gray-200 text-gray-600 hover:border-green-400"}`}
-                        >🌱 {plant.name}</button>
+                        >
+                            {SPECIES_EMOJI[plant.speciesName] || "🌱"} {plant.name}
+                        </button>
                     ))}
                 </div>
             ) : (
@@ -134,7 +156,9 @@ function DiaryPage() {
                     {/* 다이어리 목록 */}
                     <div className="w-64 flex-shrink-0 bg-white rounded-xl border border-gray-200 overflow-hidden">
                         <div className="p-4 border-b border-gray-100">
-                            <p className="text-sm font-semibold text-gray-700">{selectedPlant.name} 일지</p>
+                            <p className="text-sm font-semibold text-gray-700">
+                                {SPECIES_EMOJI[selectedPlant.speciesName] || "🌱"} {selectedPlant.name} 일지
+                            </p>
                             <p className="text-xs text-gray-400 mt-0.5">총 {diaries.length}개</p>
                         </div>
                         {loading ? (
@@ -146,7 +170,14 @@ function DiaryPage() {
                                 {diaries.map(diary => (
                                     <button
                                         key={diary.id}
-                                        onClick={() => { setSelectedDiary(diary); setShowForm(false); }}
+                                        onClick={() => {
+                                            if (selectedDiary?.id === diary.id) {
+                                                setSelectedDiary(null);
+                                            } else {
+                                                setSelectedDiary(diary);
+                                                setShowForm(false);
+                                            }
+                                        }}
                                         className={`text-left px-4 py-3 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors
                                             ${selectedDiary?.id === diary.id ? "bg-green-50 border-l-2 border-l-green-500" : ""}`}
                                     >
