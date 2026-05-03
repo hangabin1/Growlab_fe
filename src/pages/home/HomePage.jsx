@@ -30,6 +30,11 @@ const SPECIES_EMOJI = {
     "산세베리아 스투키": "🪴",
 };
 
+const formatValue = (value, unit) => {
+    if (value === null || value === undefined) return "-";
+    return `${value}${unit}`;
+};
+
 function DeviceCard({ device, onDelete, onPlantRegister, onPlantDelete }) {
     const savedIconIndex = localStorage.getItem(`device_icon_${device.serialNumber}`);
     const emoji = (savedIconIndex !== null && savedIconIndex !== undefined)
@@ -76,11 +81,11 @@ function DeviceCard({ device, onDelete, onPlantRegister, onPlantDelete }) {
 
             <div className="grid grid-cols-3 gap-2 text-center">
                 {[
-                    { label: "온도", value: "-" },
-                    { label: "습도", value: "-" },
-                    { label: "pH", value: "-" },
-                    { label: "EC", value: "-" },
-                    { label: "수위", value: "-" },
+                    { label: "온도", value: formatValue(device.temperature, "°C") },
+                    { label: "습도", value: formatValue(device.humidity, "%") },
+                    { label: "pH", value: formatValue(device.ph, "") },
+                    { label: "EC", value: formatValue(device.ec, "") },
+                    { label: "수위", value: formatValue(device.waterLevel, "") },
                     { label: "조명", value: device.status ? "ON" : "OFF" },
                 ].map(({ label, value }) => (
                     <div key={label} className="bg-gray-50 rounded-lg py-2">
@@ -116,6 +121,19 @@ function HomePage() {
         } catch (err) { console.error(err); }
     };
 
+    const getAverage = (devices, key) => {
+    if (!devices || devices.length === 0) return "-";
+
+    const values = devices
+        .map(d => d[key])
+        .filter(v => v !== null && v !== undefined);
+
+    if (values.length === 0) return "-";
+
+    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+    return avg.toFixed(1);
+    };
+
     const handleDelete = async (serialNumber) => {
         if (!window.confirm("기기를 삭제할까요?")) return;
         try {
@@ -136,9 +154,12 @@ function HomePage() {
         setPlantRegisterSerial(serialNumber);
     };
 
+    const avgTemp = getAverage(devices, "temperature");
+    const avgHumidity = getAverage(devices, "humidity");
+    
     const summaryItems = [
-        { icon: "🌡", label: "평균 온도", value: "23.5°C", color: "text-green-600", onClick: null },
-        { icon: "💧", label: "평균 습도", value: "65%", color: "text-green-600", onClick: null },
+        { icon: "🌡", label: "평균 온도", value: avgTemp === "-" ? "-" : `${avgTemp}°C`, color: "text-green-600" },
+        { icon: "💧", label: "평균 습도", value: avgHumidity === "-" ? "-" : `${avgHumidity}%`, color: "text-green-600" },
         { icon: "⚡", label: "활성 기기", value: `${devices.length}대`, color: "text-green-600", onClick: null },
         { icon: "🔔", label: "미확인 알림", value: `${unreadCount}건`, color: "text-green-600", onClick: () => navigate("/notifications") },
     ];
