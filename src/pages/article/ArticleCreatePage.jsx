@@ -11,9 +11,10 @@ const ArticleCreatePage = () => {
   const [content, setContent] = useState('');
   const [category, setCategory] = useState('재배 노하우');
   const [files, setFiles] = useState([]); 
-  const [previews, setPreviews] = useState([]); 
+  const [previews, setPreviews] = useState([]);     
+  const [existingImages, setExistingImages] = useState([]); 
+  const [deleteImageIds, setDeleteImageIds] = useState([]); 
 
-  // 서버 주소 설정 (환경 변수 권장)
   const SERVER_URL = "http://localhost:8080";
 
   useEffect(() => {
@@ -23,36 +24,25 @@ const ArticleCreatePage = () => {
   }, [id]);
 
   const fetchPostDetail = async () => {
-    const token = localStorage.getItem("token"); 
     try {
-      const response = await getArticleDetailApi(id, token);
+      const response = await getArticleDetailApi(id);
       const post = response.data;
       setTitle(post.title);
       setContent(post.content);
       setCategory(post.category);
 
-      /**
-       * ✅ 수정된 이미지 경로 보정 로직 (startsWith 에러 해결)
-       */
       if (post.images && post.images.length > 0) {
-        const existingPreviews = post.images.map(img => {
-          // 1. img.imgUrl 또는 img.imageUrl 중 존재하는 필드 사용 (방어 코드)
-          const rawUrl = img.imgUrl || img.imageUrl || ""; 
-          
-          if (!rawUrl) return null;
+        const formattedExisting = post.images.map(img => {
+          let url = img.imgUrl || img.imageUrl || "";
+          if (url && !url.startsWith('http')) {
+            const correctedPath = url.replace('/api/files/', '/uploads/');
+            url = `${SERVER_URL}${correctedPath.startsWith('/') ? correctedPath : '/' + correctedPath}`;
+          }
+          return { id: img.id, url: url };
+        });
 
-          // 2. 이미 http로 시작하면 그대로 반환
-          if (rawUrl.startsWith('http')) return rawUrl;
-
-          // 3. 경로 보정 (/api/files/ -> /uploads/) 및 SERVER_URL 결합
-          const correctedPath = rawUrl.replace('/api/files/', '/uploads/');
-          const baseUrl = SERVER_URL.endsWith('/') ? SERVER_URL.slice(0, -1) : SERVER_URL;
-          const path = correctedPath.startsWith('/') ? correctedPath : `/${correctedPath}`;
-          
-          return `${baseUrl}${path}`;
-        }).filter(url => url !== null); // 유효하지 않은 경로는 필터링
-
-        setPreviews(existingPreviews);
+        setExistingImages(formattedExisting);
+        setPreviews(formattedExisting.map(img => img.url));
       }
     } catch (error) {
       console.error("데이터 로드 실패:", error);
@@ -64,23 +54,37 @@ const ArticleCreatePage = () => {
     const selectedFiles = Array.from(e.target.files);
     if (selectedFiles.length > 0) {
       setFiles((prevFiles) => [...prevFiles, ...selectedFiles]);
-
       const newPreviews = selectedFiles.map((file) => URL.createObjectURL(file));
       setPreviews((prevPreviews) => [...prevPreviews, ...newPreviews]);
-
       e.target.value = "";
     }
   };
 
   const handleRemoveFile = (index) => {
-    setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
-    setPreviews((prevPreviews) => prevPreviews.filter((_, i) => i !== index));
-  };
+    const targetPreview = previews[index];
 
+    const existingIdx = existingImages.findIndex(img => img.url === targetPreview);
+    if (existingIdx !== -1) {
+      const targetId = existingImages[existingIdx].id;
+      setDeleteImageIds((prev) => [...prev, targetId]); // 백엔드 전송용 ID 바구니에 담기
+      setExistingImages((prev) => prev.filter((_, i) => i !== existingIdx));
+    } 
+    // 케이스 B: 방금 추가한 새 파일인 경우
+    else {
+      // previews에서 새 파일이 시작되는 위치 계산
+      const newFileIdx = index - existingImages.length;
+      setFiles((prev) => prev.filter((_, i) => i !== newFileIdx));
+    }
+
+    // 공통: 화면에서 제거
+    setPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+    
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return alert("제목과 내용을 입력하세요.");
 
+    // 로그인 체크는 로컬 스토리지 확인으로 유지
     const currentToken = localStorage.getItem("token");
     if (!currentToken) {
       alert("로그인이 필요합니다.");
@@ -89,7 +93,7 @@ const ArticleCreatePage = () => {
     }
 
     const formData = new FormData();
-    const articleData = { title, content, category };
+    const articleData = { title, content, category, deleteImageIds };
     
     formData.append(
       'articleData', 
@@ -102,17 +106,17 @@ const ArticleCreatePage = () => {
 
     try {
       if (isEditMode) {
-        await updateArticleApi(id, formData, currentToken);
+        await updateArticleApi(id, formData);
         alert("글이 성공적으로 수정되었습니다!");
       } else {
-        await createArticleApi(formData, currentToken);
+        await createArticleApi(formData);
         alert("글이 성공적으로 등록되었습니다!");
       }
       navigate(isEditMode ? `/articles/${id}` : '/articles');
     } catch (error) {
       console.error("작업 실패:", error);
       if (error.response?.status === 401) {
-        alert("수정 권한이 없거나 세션이 만료되었습니다.");
+        alert("수정 권한이 없거나 세션이 만료되었습니다. 다시 로그인 해주세요.");
       } else {
         alert(isEditMode ? "글 수정 중 오류가 발생했습니다." : "글 등록 중 오류가 발생했습니다.");
       }
