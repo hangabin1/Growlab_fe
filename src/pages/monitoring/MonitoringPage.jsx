@@ -19,6 +19,9 @@ function MonitoringPage() {
     const [device, setDevice] = useState(null);
     const [notices, setNotices] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [autoCapture, setAutoCapture] = useState(false);
+    const [rotationAngle, setRotationAngle] = useState(0);
+    const [cameraHeight, setCameraHeight] = useState(50);
 
     useEffect(() => {
         const fetch = async () => {
@@ -146,7 +149,7 @@ function MonitoringPage() {
                             <span className="text-sm">🔔</span>
                             <h2 className="text-sm font-semibold text-gray-700">최근 알림</h2>
                         </div>
-                        <div className="flex flex-col gap-3 text-xs text-gray-500 overflow-y-auto" style={{ height: "445px" }}>
+                        <div className="flex flex-col gap-3 text-xs text-gray-500 overflow-y-auto" style={{ height: "500px" }}>
                             {notices.length === 0 ? (
                                 <div className="flex items-center justify-center h-full text-gray-300">알림이 없어요</div>
                             ) : (
@@ -282,7 +285,8 @@ function MonitoringPage() {
                     <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
                         <h2 className="text-sm font-semibold text-gray-700 mb-4">⚙️ 시스템 제어</h2>
 
-                        <div className="mb-4">
+                        {/* LED 조명 */}
+                        <div className="mb-4 pb-4 border-b border-gray-50">
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-xs font-medium text-gray-600">💡 LED 조명</span>
                                 <div className={`w-10 h-5 rounded-full relative cursor-pointer transition-colors ${device.status ? "bg-green-500" : "bg-gray-200"}`}>
@@ -301,38 +305,61 @@ function MonitoringPage() {
                             </div>
                         </div>
 
+                        {/* 타워 회전 */}
                         <div className="mb-4 pb-4 border-b border-gray-50">
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-xs font-medium text-gray-600">🔄 타워 회전 (스텝모터)</span>
                             </div>
-                            <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center justify-between mb-1">
                                 <span className="text-xs text-gray-400">회전 각도</span>
-                                <span className="text-xs font-bold text-gray-700 ml-auto">0°</span>
+                                <span className="text-xs font-bold text-green-600">{rotationAngle}°</span>
                             </div>
-                            <input type="range" min="0" max="360" defaultValue="0" className="w-full accent-green-500" />
+                            <input
+                                type="range"
+                                min="0"
+                                max="360"
+                                value={rotationAngle}
+                                onChange={e => setRotationAngle(Number(e.target.value))}
+                                className="w-full accent-green-500"
+                            />
                             <button className="w-full mt-2 border border-gray-200 text-xs py-1.5 rounded-lg hover:bg-gray-50 transition-colors">즉시 회전</button>
                         </div>
 
+                        {/* ESP32-CAM */}
                         <div className="mb-4 pb-4 border-b border-gray-50">
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-xs font-medium text-gray-600">📷 ESP32-CAM Z축</span>
                             </div>
-                            <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center justify-between mb-1">
                                 <span className="text-xs text-gray-400">카메라 높이</span>
-                                <span className="text-xs font-bold text-gray-700 ml-auto">50cm</span>
+                                <span className="text-xs font-bold text-green-600">{cameraHeight}cm</span>
                             </div>
-                            <input type="range" min="0" max="100" defaultValue="50" className="w-full accent-green-500" />
+                            <input type="range" 
+                            min="0" 
+                            max="100" 
+                            value={cameraHeight}
+                            onChange={(e) => setCameraHeight(Number(e.target.value))}
+                            className="w-full accent-green-500" />
                             <button className="w-full mt-2 border border-gray-200 text-xs py-1.5 rounded-lg hover:bg-gray-50 transition-colors">즉시 이동</button>
                         </div>
 
-                        <div className="mb-4">
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-xs font-medium text-gray-600">💧 자동 양액 스케줄</span>
-                                <div className="w-10 h-5 rounded-full relative cursor-pointer bg-green-500">
-                                    <div className="w-4 h-4 bg-white rounded-full absolute top-0.5 left-5 shadow" />
+                        {/* 자동 촬영 스케줄 */}
+                        <div className={`mb-4 rounded-xl p-3 transition-colors ${autoCapture ? "bg-green-50 border border-green-100" : "bg-gray-50"}`}>
+                            <div className="flex items-center justify-between mb-3">
+                                <span className={`text-xs font-medium ${autoCapture ? "text-green-700" : "text-gray-600"}`}>
+                                    💧 자동 촬영 스케줄
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="text-xs font-medium text-gray-700">자동 촬영</span>
+                                <div
+                                    onClick={() => setAutoCapture(prev => !prev)}
+                                    className={`w-10 h-5 rounded-full relative cursor-pointer transition-colors ${autoCapture ? "bg-green-500" : "bg-gray-200"}`}
+                                >
+                                    <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all shadow ${autoCapture ? "left-5" : "left-0.5"}`} />
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-2 gap-2 mb-3">
                                 <div>
                                     <label className="text-xs text-gray-400">시작</label>
                                     <input type="time" defaultValue="09:00" className="w-full border border-gray-100 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-green-400 mt-1" />
@@ -346,15 +373,14 @@ function MonitoringPage() {
                                     </select>
                                 </div>
                             </div>
+                            <p className="text-xs text-gray-400 leading-relaxed">
+                                동작 방식: 설정된 시간마다 타워가 360° 회전하면서 카메라가 Z축을 따라 상하로 이동하여 전체 식물을 촬영합니다.
+                            </p>
                         </div>
-
-                        <button className="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2.5 rounded-xl transition-colors">
-                            전체 설정 저장
-                        </button>
                     </div>
 
                     {/* AI 재배 조언 */}
-                    <div className="bg-green-50 rounded-2xl border border-green-100 p-4">
+                    <div className="bg-green-50 rounded-2xl border border-green-100 p-4 overflow-y-auto" style={{ height: "230px" }}>
                         <div className="flex items-center gap-2 mb-3">
                             <span className="text-sm">🤖</span>
                             <h2 className="text-sm font-semibold text-green-700">AI 재배 조언</h2>
