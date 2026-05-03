@@ -20,8 +20,22 @@ function MonitoringPage() {
     const [notices, setNotices] = useState([]);
     const [loading, setLoading] = useState(true);
     const [autoCapture, setAutoCapture] = useState(false);
+    const [isLedOn, setIsLedOn] = useState(true);
     const [rotationAngle, setRotationAngle] = useState(0);
     const [cameraHeight, setCameraHeight] = useState(50);
+    const [range, setRange] = useState(14);
+    const RANGE_OPTIONS = [7, 14, 30, 60];
+
+    const growthData = [
+        3,4,5,6,7,8,9,10,11,12,
+        13,14,15,16,17,18,19,20,21,22,
+        23,24,25,26,27,28,29,30,31,32,
+        33,34,35,36,37,38,39,40,41,42,
+        43,44,45,46,47,48,49,50,51,52,
+        53,54,55,56,57,58,59,60
+    ];
+
+    const visibleData = growthData.slice(-range);
 
     useEffect(() => {
         const fetch = async () => {
@@ -248,21 +262,44 @@ function MonitoringPage() {
 
                     {/* 생육 변화 그래프 */}
                     <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-                        <div className="flex items-center justify-between mb-3">
-                            <h2 className="text-sm font-semibold text-gray-700">📈 생육 변화</h2>
-                            <div className="flex gap-1">
-                                {["7일", "14일", "30일"].map(t => (
-                                    <button key={t} className="text-xs px-2 py-1 rounded-lg bg-gray-50 text-gray-400 hover:bg-green-50 hover:text-green-600 transition-colors">{t}</button>
-                                ))}
-                            </div>
+                    <div className="flex items-center justify-between mb-3">
+                        <h2 className="text-sm font-semibold text-gray-700">📈 생육 변화</h2>
+
+                        {/* 🔥 버튼 */}
+                        <div className="flex gap-1 flex-wrap">
+                        {RANGE_OPTIONS.map((day) => (
+                            <button
+                            key={day}
+                            onClick={() => setRange(day)}
+                            className={`text-xs px-2 py-1 rounded-lg transition-colors
+                                ${
+                                range === day
+                                    ? "bg-green-100 text-green-600 font-bold"
+                                    : "bg-gray-50 text-gray-400 hover:bg-green-50 hover:text-green-600"
+                                }`}
+                            >
+                            {day}일
+                            </button>
+                        ))}
                         </div>
-                        <div className="h-36 flex items-end justify-around gap-1">
-                            {[3, 5, 6, 8, 9, 11, 13, 15, 16, 18, 20, 22, 25, 27].map((v, i) => (
-                                <div key={i} className="flex-1 bg-green-100 rounded-t-sm hover:bg-green-400 transition-colors" style={{ height: `${v * 4}px` }} />
-                            ))}
-                        </div>
-                        <div className="flex justify-between text-xs text-gray-300 mt-1">
-                            <span>1일</span><span>7일</span><span>14일</span>
+                    </div>
+
+                    {/* 🔥 그래프 */}
+                    <div className="h-36 flex items-end justify-between gap-1" >
+                        {visibleData.map((v, i) => (
+                        <div
+                            key={i}
+                            className="flex-1 bg-green-100 rounded-t-sm hover:bg-green-400 transition-colors"
+                            style={{ height: `${v * 2}px` }}
+                        />
+                        ))}
+                    </div>
+
+                    {/* 🔥 라벨 */}
+                    <div className="flex justify-between text-xs text-gray-300 mt-1">
+                            <span>{range - 1}일 전</span>
+                            <span>{Math.floor(range / 2)}일 전</span>
+                            <span>오늘</span>
                         </div>
                     </div>
 
@@ -289,9 +326,15 @@ function MonitoringPage() {
                         <div className="mb-4 pb-4 border-b border-gray-50">
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-xs font-medium text-gray-600">💡 LED 조명</span>
-                                <div className={`w-10 h-5 rounded-full relative cursor-pointer transition-colors ${device.status ? "bg-green-500" : "bg-gray-200"}`}>
-                                    <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all shadow ${device.status ? "left-5" : "left-0.5"}`} />
-                                </div>
+                                <div
+                                onClick={() => setIsLedOn(prev => !prev)}
+                                className={`w-10 h-5 rounded-full relative cursor-pointer transition-colors
+                                    ${isLedOn ? "bg-green-500" : "bg-gray-200"}`}>
+                                <div
+                                    className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all shadow
+                                        ${isLedOn ? "left-5" : "left-0.5"}`}
+                                />
+                            </div>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                                 <div>
@@ -377,10 +420,16 @@ function MonitoringPage() {
                                 동작 방식: 설정된 시간마다 타워가 360° 회전하면서 카메라가 Z축을 따라 상하로 이동하여 전체 식물을 촬영합니다.
                             </p>
                         </div>
+
+                        <button
+                            className="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors">
+                            전체 설정 저장
+                        </button>
+
                     </div>
 
                     {/* AI 재배 조언 */}
-                    <div className="bg-green-50 rounded-2xl border border-green-100 p-4 overflow-y-auto" style={{ height: "230px" }}>
+                    <div className="bg-green-50 rounded-2xl border border-green-100 p-4 overflow-y-auto" style={{ height: "200px" }}>
                         <div className="flex items-center gap-2 mb-3">
                             <span className="text-sm">🤖</span>
                             <h2 className="text-sm font-semibold text-green-700">AI 재배 조언</h2>
