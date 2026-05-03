@@ -28,6 +28,8 @@ function DiaryPage() {
     const [editingDiary, setEditingDiary] = useState(null);
     const [selectedDiary, setSelectedDiary] = useState(null);
     const [form, setForm] = useState({ title: "", content: "", targetDate: "" });
+    const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
     const [error, setError] = useState("");
 
     useEffect(() => {
@@ -57,6 +59,18 @@ function DiaryPage() {
         finally { setLoading(false); }
     };
 
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setImageFile(file);
+        setImagePreview(URL.createObjectURL(file));
+    };
+
+    const clearImage = () => {
+        setImageFile(null);
+        setImagePreview(null);
+    };
+
     const handleSubmit = async () => {
         if (!form.title || !form.content || !form.targetDate) {
             setError("모든 항목을 입력해주세요.");
@@ -64,18 +78,26 @@ function DiaryPage() {
         }
         setError("");
         try {
-            const payload = {
+            const formData = new FormData();
+            const diaryData = {
                 ...form,
                 targetDate: `${form.targetDate} 00:00:00`,
             };
+            formData.append("diaryData", new Blob([JSON.stringify(diaryData)], { type: "application/json" }));
+            if (imageFile) {
+                formData.append("file", imageFile);
+            }
+
             if (editingDiary) {
-                await updateDiaryApi(selectedPlant.id, editingDiary.id, payload);
+                await updateDiaryApi(selectedPlant.id, editingDiary.id, formData);
             } else {
-                await createDiaryApi(selectedPlant.id, payload);
+                await createDiaryApi(selectedPlant.id, formData);
             }
             setShowForm(false);
             setEditingDiary(null);
             setForm({ title: "", content: "", targetDate: "" });
+            setImageFile(null);
+            setImagePreview(null);
             fetchDiaries(selectedPlant.id);
         } catch (err) {
             setError("저장 중 오류가 발생했습니다.");
@@ -89,6 +111,8 @@ function DiaryPage() {
             content: diary.content,
             targetDate: diary.targetDate?.slice(0, 10) || "",
         });
+        setImageFile(null);
+        setImagePreview(diary.imageUrl ? `http://localhost:8080${diary.imageUrl}` : null);
         setSelectedDiary(null);
         setShowForm(true);
     };
@@ -105,6 +129,8 @@ function DiaryPage() {
     const openForm = () => {
         setEditingDiary(null);
         setForm({ title: "", content: "", targetDate: "" });
+        setImageFile(null);
+        setImagePreview(null);
         setSelectedDiary(null);
         setShowForm(true);
     };
@@ -220,17 +246,52 @@ function DiaryPage() {
                                         value={form.content}
                                         onChange={e => setForm({ ...form, content: e.target.value })}
                                         placeholder="오늘의 식물 상태를 기록해보세요"
-                                        rows={8}
+                                        rows={6}
                                         className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none"
                                     />
                                 </div>
+
+                                {/* 사진 첨부 */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">사진 첨부</label>
+                                    {imagePreview ? (
+                                        <div className="relative w-full">
+                                            <img
+                                                src={imagePreview}
+                                                alt="미리보기"
+                                                className="w-full max-h-48 object-cover rounded-lg border border-gray-200"
+                                            />
+                                            <button
+                                                onClick={clearImage}
+                                                className="absolute top-2 right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs hover:bg-red-600"
+                                            >✕</button>
+                                        </div>
+                                    ) : (
+                                        <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:border-green-400 hover:bg-green-50 transition-colors">
+                                            <span className="text-2xl mb-1">📷</span>
+                                            <span className="text-xs text-gray-400">클릭하여 사진 추가</span>
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handleImageChange}
+                                                className="hidden"
+                                            />
+                                        </label>
+                                    )}
+                                </div>
+
                                 <div className="flex gap-2">
                                     <button
                                         onClick={handleSubmit}
                                         className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors"
                                     >{editingDiary ? "수정 완료" : "저장"}</button>
                                     <button
-                                        onClick={() => { setShowForm(false); setEditingDiary(null); }}
+                                        onClick={() => {
+                                            setShowForm(false);
+                                            setEditingDiary(null);
+                                            setImageFile(null);
+                                            setImagePreview(null);
+                                        }}
                                         className="px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-500 hover:bg-gray-50"
                                     >취소</button>
                                 </div>
@@ -254,6 +315,13 @@ function DiaryPage() {
                                     </div>
                                 </div>
                                 <hr className="border-gray-100" />
+                                {selectedDiary.imageUrl && (
+                                    <img
+                                        src={`http://localhost:8080${selectedDiary.imageUrl}`}
+                                        alt="일지 사진"
+                                        className="w-full max-h-64 object-cover rounded-lg border border-gray-100"
+                                    />
+                                )}
                                 <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{selectedDiary.content}</p>
                             </div>
                         ) : (
