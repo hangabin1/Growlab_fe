@@ -14,10 +14,17 @@ const CATEGORY_MAP = {
 const SPECIES_EMOJI = {
     "방울토마토": "🍅",
     "청상추": "🥬",
+    "적상추": "🥬",
     "바질": "🌿",
     "딸기": "🍓",
     "파프리카": "🌶️",
     "브로콜리": "🥦",
+    "고추": "🌶️",
+    "블루베리": "🫐",
+    "페퍼민트": "🌿",
+    "청경채": "🥬",
+    "테이블야자": "🌴",
+    "산세베리아 스투키": "🪴",
 };
 
 const DIFFICULTY_LABEL = {
@@ -49,7 +56,6 @@ function SelectPlantModal({ serialNumber, onClose, onSuccess }) {
             .finally(() => setFetchLoading(false));
     }, []);
 
-    // 식물 선택 시 기본 이름 세팅
     const handleSelect = (sp) => {
         setSelected(sp);
         setPlantName(sp.name || sp.koreanName || "");
@@ -57,13 +63,8 @@ function SelectPlantModal({ serialNumber, onClose, onSuccess }) {
     };
 
     const filtered = species.filter(sp => {
-        const matchSearch =
-            (sp.name || "").includes(search);
-
-        const matchCategory =
-            category === "전체" ||
-            sp.category === CATEGORY_MAP[category];
-
+        const matchSearch = (sp.name || "").includes(search);
+        const matchCategory = category === "전체" || sp.category === CATEGORY_MAP[category];
         return matchSearch && matchCategory;
     });
 
@@ -96,9 +97,13 @@ function SelectPlantModal({ serialNumber, onClose, onSuccess }) {
 
     return (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl w-full max-w-3xl shadow-xl flex flex-col overflow-hidden" style={{ maxHeight: "90vh" }}>
-                {/* 헤더 */}
-                <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
+            {/* 모달 전체: 고정 높이 */}
+            <div
+                className="bg-white rounded-2xl w-full max-w-3xl shadow-xl flex flex-col overflow-hidden"
+                style={{ height: "600px" }}
+            >
+                {/* 헤더 - 고정 */}
+                <div className="flex-shrink-0 flex items-center gap-3 px-5 py-4 border-b border-gray-100">
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg leading-none">←</button>
                     <h2 className="text-base font-bold text-gray-800">식물 선택</h2>
                     <div className="ml-auto flex items-center gap-2">
@@ -106,11 +111,13 @@ function SelectPlantModal({ serialNumber, onClose, onSuccess }) {
                     </div>
                 </div>
 
-                <div className="flex flex-1 overflow-hidden">
+                {/* 바디 - 남은 높이 전부 차지, 좌우 분할 */}
+                <div className="flex flex-1 min-h-0">
+
                     {/* 왼쪽: 검색 + 목록 */}
-                    <div className="flex flex-col flex-1 overflow-hidden border-r border-gray-100">
-                        {/* 검색 */}
-                        <div className="px-4 pt-4 pb-2">
+                    <div className="flex flex-col flex-1 min-w-0 border-r border-gray-100">
+                        {/* 검색 - 고정 */}
+                        <div className="flex-shrink-0 px-4 pt-4 pb-2">
                             <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2">
                                 <span className="text-gray-400 text-sm">🔍</span>
                                 <input
@@ -123,8 +130,8 @@ function SelectPlantModal({ serialNumber, onClose, onSuccess }) {
                             </div>
                         </div>
 
-                        {/* 카테고리 탭 */}
-                        <div className="flex gap-2 px-4 pb-3 flex-wrap">
+                        {/* 카테고리 탭 - 고정 */}
+                        <div className="flex-shrink-0 flex gap-2 px-4 pb-3 flex-wrap">
                             {CATEGORY_FILTERS.map(cat => (
                                 <button
                                     key={cat}
@@ -145,13 +152,14 @@ function SelectPlantModal({ serialNumber, onClose, onSuccess }) {
                             ))}
                         </div>
 
-                        {/* 식물 목록 */}
-                        <div className="px-4 pb-2">
-                            <div className="text-xs text-gray-400 mb-2">
+                        {/* 개수 - 고정 */}
+                        <div className="flex-shrink-0 px-4 pb-2">
+                            <div className="text-xs text-gray-400">
                                 재배 가능한 식물 <span className="font-semibold">{filtered.length}가지</span>
                             </div>
                         </div>
 
+                        {/* 식물 그리드 - 스크롤 */}
                         <div className="flex-1 overflow-y-auto px-4 pb-4">
                             {fetchLoading ? (
                                 <div className="flex items-center justify-center h-32 text-gray-400 text-sm">불러오는 중...</div>
@@ -195,8 +203,8 @@ function SelectPlantModal({ serialNumber, onClose, onSuccess }) {
                         </div>
                     </div>
 
-                    {/* 오른쪽: 상세 정보 */}
-                    <div className="w-64 flex-shrink-0 flex flex-col p-5 overflow-y-auto">
+                    {/* 오른쪽: 상세 정보 - 스크롤 */}
+                    <div className="w-64 flex-shrink-0 overflow-y-auto p-5">
                         {!selected ? (
                             <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
                                 <div className="text-5xl">🌱</div>
@@ -204,7 +212,6 @@ function SelectPlantModal({ serialNumber, onClose, onSuccess }) {
                             </div>
                         ) : (
                             <div className="flex flex-col gap-4">
-                                {/* 식물 헤더 */}
                                 <div className="flex flex-col items-center gap-2 text-center">
                                     <div className="w-16 h-16 rounded-2xl bg-green-50 flex items-center justify-center text-4xl">
                                         {SPECIES_EMOJI[selected.name || selected.koreanName] || "🌱"}
@@ -215,12 +222,10 @@ function SelectPlantModal({ serialNumber, onClose, onSuccess }) {
                                     </div>
                                 </div>
 
-                                {/* 설명 */}
                                 {selected.description && (
                                     <p className="text-xs text-gray-500 leading-relaxed text-center">{selected.description}</p>
                                 )}
 
-                                {/* 스탯 */}
                                 <div className="flex flex-col gap-2">
                                     {selected.growthDays && (
                                         <div className="bg-gray-50 rounded-lg p-2.5 text-center">
@@ -235,9 +240,7 @@ function SelectPlantModal({ serialNumber, onClose, onSuccess }) {
                                         </div>
                                     )}
                                     {selected.aiPromptGuideline && (
-                                        <p className="text-xs text-gray-500 leading-relaxed text-center">
-                                            {selected.aiPromptGuideline}
-                                        </p>
+                                        <p className="text-xs text-gray-500 leading-relaxed text-center">{selected.aiPromptGuideline}</p>
                                     )}
                                     {selected.temperature && (
                                         <div className="bg-gray-50 rounded-lg p-2.5 text-center">
@@ -253,7 +256,6 @@ function SelectPlantModal({ serialNumber, onClose, onSuccess }) {
                                     )}
                                 </div>
 
-                                {/* 식물 이름 입력 */}
                                 <div>
                                     <label className="block text-xs font-medium text-gray-600 mb-1">내 식물 이름</label>
                                     <input
