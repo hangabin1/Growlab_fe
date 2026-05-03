@@ -10,6 +10,7 @@ import MyPage from "../pages/mypage/MyPage";
 import ProtectedRoute from "../components/layouts/ProtectedRoute";
 import NotificationPage from "../pages/notifications/NotificationPage";
 import DiaryPage from "../pages/diary/DiaryPage";
+import MonitoringPage from "../pages/monitoring/MonitoringPage";
 
 function AppRoutes() {
     return (
@@ -40,6 +41,8 @@ function AppRoutes() {
             <Route path="/notifications" element={<ProtectedRoute><NotificationPage /></ProtectedRoute>} />
 
             <Route path="/diary" element={<ProtectedRoute><DiaryPage /></ProtectedRoute>} />
+
+            <Route path="/monitoring/:serialNumber" element={<MonitoringPage />} />
         </Routes>
     )
 }

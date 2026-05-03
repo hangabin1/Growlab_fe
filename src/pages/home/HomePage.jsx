@@ -35,16 +35,22 @@ const formatValue = (value, unit) => {
     return `${value}${unit}`;
 };
 
-function DeviceCard({ device, onDelete, onPlantRegister, onPlantDelete }) {
+function DeviceCard({ device, onDelete, onPlantRegister, onPlantDelete, onOpenMonitoring }) {
     const savedIconIndex = localStorage.getItem(`device_icon_${device.serialNumber}`);
     const emoji = (savedIconIndex !== null && savedIconIndex !== undefined)
         ? (ICONS[parseInt(savedIconIndex)] || "🌱")
         : "🌱";
 
     return (
-        <div className="bg-white rounded-xl border border-gray-200 p-4 relative">
+        <div 
+            onClick={() => onOpenMonitoring(device.serialNumber)}
+            className="bg-white rounded-xl border border-gray-200 p-4 relative cursor-pointer hover:shadow-md transition"
+        >
             <button
-                onClick={() => onDelete(device.serialNumber)}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(device.serialNumber);
+                }}
                 className="absolute top-3 right-3 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs hover:bg-red-600 transition-colors"
             >✕</button>
 
@@ -62,7 +68,10 @@ function DeviceCard({ device, onDelete, onPlantRegister, onPlantDelete }) {
                                 {STAGE_LABEL[device.plant.plantStage] || device.plant.plantStage}
                             </span>
                             <button
-                                onClick={() => onPlantDelete(device.plant.id)}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onPlantDelete(device.plant.id);
+                                }}
                                 className="text-xs text-red-400 hover:text-red-600 ml-1"
                                 title="식물 삭제"
                             >🗑</button>
@@ -234,6 +243,7 @@ function HomePage() {
                                 onDelete={handleDelete}
                                 onPlantRegister={handlePlantRegister}
                                 onPlantDelete={handlePlantDelete}
+                                onOpenMonitoring={(serial) => navigate(`/monitoring/${serial}`)}
                             />
                         ))}
                     </div>
