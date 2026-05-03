@@ -8,10 +8,8 @@ import {
   createCommentApi,
   deleteArticleApi, 
   deleteCommentApi,
-  updateCommentApi // 정식 추가된 API 사용
+  updateCommentApi 
 } from '../../api/articleApi';
-
-let isFetchingInternal = false;
 
 const ArticleDetailPage = () => {
   const { id } = useParams();
@@ -20,70 +18,62 @@ const ArticleDetailPage = () => {
   const [comment, setComment] = useState("");
   const SERVER_URL = "http://localhost:8080";
 
+  // 라이트박스 상태
   const [isOpen, setIsOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const commentsPerPage = 5;
+  const [photoIndex, setPhotoIndex] = useState(0);
 
+  // 댓글 수정 상태 
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingContent, setEditingContent] = useState("");
 
-  // ★ 수정 포인트: userId가 null인 문제를 해결하기 위해 username으로 본인 확인
   const currentUsername = localStorage.getItem("username");
 
   useEffect(() => {
-    if (isFetchingInternal) return;
     fetchDetail();
-    setCurrentPage(1);
-    return () => { isFetchingInternal = false; };
   }, [id]);
 
   const fetchDetail = async () => {
-    isFetchingInternal = true;
     const token = localStorage.getItem("token");
     try {
       const response = await getArticleDetailApi(id, token);
       setPost(response.data);
-      // 디버깅용 로그
-      console.log("현재 접속자:", currentUsername, "작성자:", response.data.authorUsername);
     } catch (error) {
-      console.error("상세조회 실패:", error);
-      isFetchingInternal = false;
+      console.error("데이터 가져오기 실패:", error);
     }
   };
 
-  const handleDeleteArticle = async () => {
-    if (!window.confirm("정말로 이 게시글을 삭제하시겠습니까?")) return;
+  const getFormattedImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    let correctedPath = url.replace('/api/files/', '/uploads/');
+    const parts = correctedPath.split('/');
+    const fileName = parts.pop();
+    const path = parts.join('/');
+    const finalPath = path.startsWith('/') ? path : `/${path}`;
+    return `${SERVER_URL}${finalPath}/${encodeURIComponent(fileName)}`;
+  };
+
+  const handleLike = async () => {
     const token = localStorage.getItem("token");
+    if (!token) return alert("로그인이 필요합니다.");
     try {
-      await deleteArticleApi(id, token);
-      alert("삭제되었습니다.");
-      navigate('/articles');
-    } catch (error) { 
-      alert("삭제 실패: 권한이 없습니다."); 
-    }
+      await toggleArticleLikeApi(id, token);
+      fetchDetail();
+    } catch (err) { console.error(err); }
   };
 
-  const handleCommentSubmit = async () => {
-    if (!comment.trim()) return;
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
     const token = localStorage.getItem("token");
+    if (!comment.trim()) return;
     try {
       await createCommentApi(id, { content: comment }, token);
-      setComment(""); 
-      isFetchingInternal = false;
-      fetchDetail(); 
-    } catch (error) { console.error(error); }
-  };
-
-  const handleDeleteComment = async (commentId) => {
-    if (!window.confirm("댓글을 삭제하시겠습니까?")) return;
-    const token = localStorage.getItem("token");
-    try {
-      await deleteCommentApi(commentId, token);
-      isFetchingInternal = false;
+      setComment("");
       fetchDetail();
-    } catch (error) { alert("댓글 삭제 실패"); }
+    } catch (err) { console.error(err); }
   };
 
+  // --- 댓글 수정 관련 함수 시작  ---
   const startEditComment = (c) => {
     setEditingCommentId(c.id);
     setEditingContent(c.content);
@@ -97,132 +87,141 @@ const ArticleDetailPage = () => {
   const handleUpdateComment = async (commentId) => {
     const token = localStorage.getItem("token");
     try {
-      // ★ 수정 포인트: 정식 updateCommentApi 호출
       await updateCommentApi(commentId, { content: editingContent }, token);
       setEditingCommentId(null);
-      isFetchingInternal = false;
       fetchDetail();
     } catch (error) {
       alert("댓글 수정 실패");
     }
   };
 
-  const handleLike = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return alert("로그인이 필요합니다.");
+  const handleDeleteComment = async (commentId) => {
+    if (!window.confirm("댓글을 삭제하시겠습니까?")) return;
     try {
-      await toggleArticleLikeApi(id, token);
-      isFetchingInternal = false; 
-      fetchDetail(); 
-    } catch (error) { console.error(error); }
+      await deleteCommentApi(commentId, localStorage.getItem("token"));
+      fetchDetail();
+    } catch (err) { console.error(err); }
+  };
+  // --- 댓글 수정 관련 함수 끝 ---
+
+  const getSlides = () => {
+    if (!post) return [];
+    const slides = [];
+    if (post.imageUrl) slides.push({ src: getFormattedImageUrl(post.imageUrl) });
+    if (post.images) {
+      post.images.forEach(img => slides.push({ src: getFormattedImageUrl(img.imgUrl || img.imageUrl) }));
+    }
+    return slides;
   };
 
   if (!post) return <div className="p-20 text-center font-bold text-gray-400">로딩 중...</div>;
-
-  const allComments = post.comments || [];
-  const currentComments = allComments.slice((currentPage-1)*commentsPerPage, currentPage*commentsPerPage);
+  const slides = getSlides();
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] pt-6 pb-16 px-6 font-sans">
+    <div className="min-h-screen bg-[#f8f9fa] pt-6 pb-20 px-6 font-sans">
       <div className="max-w-4xl mx-auto">
-        
         <div className="mb-6 flex justify-between items-center">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-400 hover:text-green-600 font-bold text-sm group">
-            <span className="group-hover:-translate-x-1 transition-transform">←</span> 목록으로 돌아가기
-          </button>
-
-          {/* ★ 수정 포인트: ID 대신 Username으로 비교하여 버튼 노출 제어 */}
+          <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-green-600 font-bold text-sm">← 목록으로</button>
           {post.authorUsername === currentUsername && (
             <div className="flex gap-2">
-              <button onClick={() => navigate(`/articles/edit/${id}`)} className="text-xs font-bold text-gray-500 bg-gray-100 px-4 py-2 rounded-xl hover:bg-gray-200 transition-all shadow-sm">게시글 수정</button>
-              <button onClick={handleDeleteArticle} className="text-xs font-bold text-red-500 bg-red-50 px-4 py-2 rounded-xl hover:bg-red-100 transition-all shadow-sm">게시글 삭제</button>
+              <button onClick={() => navigate(`/articles/edit/${id}`)} className="text-xs font-bold text-gray-400 hover:text-gray-600">게시글 수정</button>
+              <button onClick={() => { if(window.confirm("삭제하시겠습니까?")) deleteArticleApi(id, localStorage.getItem("token")).then(()=>navigate('/articles')) }} className="text-xs font-bold text-red-400 hover:text-red-600">게시글 삭제</button>
             </div>
           )}
         </div>
 
-        <article className="bg-white rounded-[3rem] shadow-sm border border-gray-100 overflow-hidden mb-10 p-12">
-          <header className="mb-10">
+        <article className="bg-white rounded-[3rem] shadow-sm border border-gray-100 overflow-hidden mb-8 p-12">
+          <header className="mb-10 text-center border-b border-gray-50 pb-8">
             <span className="inline-block px-4 py-1.5 bg-green-50 text-green-600 rounded-full text-[11px] font-bold mb-4">{post.category}</span>
             <h1 className="text-4xl font-extrabold text-gray-900 mb-8 leading-tight">{post.title}</h1>
-            <div className="flex items-center justify-between border-b border-gray-50 pb-8">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-400 border border-indigo-100 font-bold">👤</div>
-                <div>
-                  <p className="text-sm font-bold text-gray-800">{post.authorUsername}</p>
-                  <p className="text-xs text-gray-400">{post.createdAt}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-6 text-sm text-gray-400 font-medium">
-                <span>👁️ 조회수 {post.viewCount || 0}</span>
-                <span className={post.liked ? 'text-orange-500 font-bold' : ''}>❤️ 좋아요 {post.likesCount || 0}</span>
-              </div>
+            <div className="flex items-center justify-center gap-6 text-sm text-gray-400 font-medium">
+                <p className="text-gray-800 font-bold">👤 {post.authorUsername}</p>
+                <p>📅 {post.createdAt}</p>
+                <p>👁️ {post.viewCount}</p>
+                <p className={post.liked ? 'text-red-500 font-bold' : ''}>❤️ {post.likesCount || 0}</p>
             </div>
           </header>
 
-          {post.imageUrl && (
-            <div className="flex justify-center mb-12">
-              <img src={post.imageUrl.startsWith('http') ? post.imageUrl : `${SERVER_URL}${post.imageUrl}`} className="max-w-full rounded-[2.5rem] border border-gray-50 shadow-sm" alt="post" />
-            </div>
-          )}
+          {/* 🖼️ 이미지 가로 정렬 */}
+          <div className="flex flex-row flex-wrap justify-center gap-4 mb-12">
+            {post.imageUrl && (
+              <img src={getFormattedImageUrl(post.imageUrl)} className="w-40 h-40 object-cover rounded-3xl cursor-pointer hover:scale-105 transition-transform shadow-sm" alt="메인" onClick={() => { setPhotoIndex(0); setIsOpen(true); }} />
+            )}
+            {post.images?.map((img, index) => (
+              <img key={index} src={getFormattedImageUrl(img.imgUrl || img.imageUrl)} className="w-40 h-40 object-cover rounded-3xl cursor-pointer hover:scale-105 transition-transform shadow-sm" alt="추가" onClick={() => { setPhotoIndex(post.imageUrl ? index + 1 : index); setIsOpen(true); }} />
+            ))}
+          </div>
 
-          <div className="text-gray-700 leading-relaxed text-lg whitespace-pre-wrap mb-12">{post.content}</div>
+          <div className="text-gray-700 leading-relaxed text-lg whitespace-pre-wrap mb-12 min-h-[150px]">
+            {post.content}
+          </div>
 
-          <div className="flex justify-center border-t border-gray-50 pt-12">
-            <button onClick={handleLike} className={`flex items-center gap-3 px-10 py-4 rounded-full border-2 font-bold transition-all ${post.liked ? 'bg-orange-50 border-orange-200 text-orange-500' : 'border-orange-100 text-orange-400 hover:bg-orange-50'}`}>
-              <span>{post.liked ? '❤️' : '🤍'}</span> {post.liked ? '도움이 되었어요!' : '이 글이 도움이 되었나요?'}
+          <div className="flex justify-center border-t border-gray-50 pt-10">
+            <button onClick={handleLike} className={`flex items-center gap-2 px-8 py-3 rounded-full font-bold transition-all ${post.liked ? 'bg-red-50 text-red-500 shadow-sm border border-red-100' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}>
+              <span className="text-xl">{post.liked ? '❤️' : '🤍'}</span>
+              <span>{post.liked ? '도움이 되었어요!' : '이 글이 도움이 되었나요?'}</span>
             </button>
           </div>
         </article>
 
-        <section className="bg-white rounded-[2.5rem] p-12 shadow-sm border border-gray-100">
-          <h2 className="text-2xl font-bold text-gray-900 mb-10">💬 댓글 <span className="text-green-600">{allComments.length}</span></h2>
+        {/* 💬 댓글 영역 (수정 기능 반영) */}
+        <section className="bg-white rounded-[3rem] shadow-sm border border-gray-100 p-12">
+          <h3 className="text-xl font-bold text-gray-900 mb-8">댓글 <span className="text-green-500">{post.comments?.length || 0}</span></h3>
           
-          <div className="flex gap-4 mb-12 bg-gray-50 p-4 rounded-[2rem]">
-            <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="지식을 나누어주세요!" className="flex-1 bg-transparent p-4 text-sm outline-none resize-none h-28" />
-            <button onClick={handleCommentSubmit} className="px-10 bg-green-600 text-white rounded-2xl font-bold hover:bg-green-700 h-28">등록</button>
-          </div>
+          <form onSubmit={handleCommentSubmit} className="mb-10 relative">
+            <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="따뜻한 댓글을 남겨주세요." className="w-full bg-gray-50 border-none rounded-[2rem] p-6 pr-20 resize-none outline-none focus:ring-1 focus:ring-green-200 min-h-[100px]" />
+            <button type="submit" className="absolute right-4 bottom-4 bg-green-500 text-white px-6 py-2 rounded-2xl font-bold text-sm hover:bg-green-600 transition-colors">등록</button>
+          </form>
 
-          <div className="space-y-8">
-            {currentComments.map((c, idx) => (
-              <div key={idx} className="flex gap-5 group border-b border-gray-50 pb-6 last:border-0">
-                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-400">👤</div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-bold text-gray-800">{c.authorUsername}</span>
-                      {/* ★ 수정 포인트: 댓글도 Username으로 비교 */}
-                      {c.authorUsername === currentUsername && (
-                        <div className="flex gap-2">
-                          <button onClick={() => startEditComment(c)} className="text-[10px] text-gray-400 hover:text-green-600 font-bold">수정</button>
-                          <button onClick={() => handleDeleteComment(c.id)} className="text-[10px] text-red-300 hover:text-red-500 font-bold">삭제</button>
-                        </div>
-                      )}
+          <div className="space-y-6">
+            {post.comments?.map((c) => (
+              <div key={c.id} className="group p-6 bg-gray-50/50 rounded-[2rem] hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
+                <div className="flex justify-between items-start mb-2">
+                  <span className="font-bold text-gray-800 text-sm">👤 {c.authorUsername}</span>
+                  {c.authorUsername === currentUsername && (
+                    <div className="flex gap-2">
+                      {/* 수정 버튼 추가 */}
+                      <button onClick={() => startEditComment(c)} className="text-xs text-gray-400 hover:text-green-500 font-bold opacity-0 group-hover:opacity-100 transition-opacity">수정</button>
+                      <button onClick={() => handleDeleteComment(c.id)} className="text-xs text-red-300 hover:text-red-500 font-bold opacity-0 group-hover:opacity-100 transition-opacity">삭제</button>
                     </div>
-                    <span className="text-[10px] text-gray-400">{c.createdAt}</span>
-                  </div>
-
-                  {editingCommentId === c.id ? (
-                    <div className="mt-2">
-                      <textarea 
-                        value={editingContent} 
-                        onChange={(e) => setEditingContent(e.target.value)}
-                        className="w-full bg-gray-50 border border-green-100 rounded-xl p-3 text-sm outline-none resize-none"
-                      />
-                      <div className="flex justify-end gap-2 mt-2">
-                        <button onClick={cancelEditComment} className="text-xs font-bold text-gray-400">취소</button>
-                        <button onClick={() => handleUpdateComment(c.id)} className="text-xs font-bold text-green-600">완료</button>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-[15px] text-gray-600 leading-relaxed whitespace-pre-wrap">{c.content}</p>
                   )}
                 </div>
+
+                {/* 댓글 수정창/내용 분기 처리 */}
+                {editingCommentId === c.id ? (
+                  <div className="mt-2">
+                    <textarea 
+                      value={editingContent} 
+                      onChange={(e) => setEditingContent(e.target.value)}
+                      className="w-full bg-white border border-green-100 rounded-xl p-4 text-sm outline-none resize-none shadow-inner"
+                    />
+                    <div className="flex justify-end gap-3 mt-2">
+                      <button onClick={cancelEditComment} className="text-xs font-bold text-gray-400">취소</button>
+                      <button onClick={() => handleUpdateComment(c.id)} className="text-xs font-bold text-green-600">수정 완료</button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">{c.content}</p>
+                )}
+                <span className="text-[10px] text-gray-300 mt-2 block">{c.createdAt}</span>
               </div>
             ))}
           </div>
         </section>
       </div>
-      <Lightbox open={isOpen} close={() => setIsOpen(false)} slides={[{ src: post.imageUrl?.startsWith('http') ? post.imageUrl : `${SERVER_URL}${post.imageUrl}` }]} />
+
+      <Lightbox 
+        open={isOpen} 
+        close={() => setIsOpen(false)} 
+        index={photoIndex}
+        slides={slides}
+        carousel={{ padding: "0px", spacing: "0px" }}
+        styles={{
+          container: { backgroundColor: "rgba(0, 0, 0, 0.95)" },
+          slide: { padding: "0px" },
+          image: { maxWidth: "90vw", maxHeight: "90vh", objectFit: "contain" }
+        }}
+      />
     </div>
   );
 };

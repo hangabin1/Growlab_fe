@@ -3,15 +3,40 @@ import { useNavigate } from 'react-router-dom';
 
 const ArticlePostCard = ({ post }) => {
   const navigate = useNavigate();
+  const SERVER_URL = "http://localhost:8080";
+
+  // 이미지 경로 보정 함수
+  const getFormattedImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    
+    let correctedPath = url.replace('/api/files/', '/uploads/');
+    const parts = correctedPath.split('/');
+    const fileName = parts.pop();
+    const path = parts.join('/');
+    const finalPath = path.startsWith('/') ? path : `/${path}`;
+    
+    return `${SERVER_URL}${finalPath}/${encodeURIComponent(fileName)}`;
+  };
 
   return (
     <div 
       onClick={() => navigate(`/articles/${post.id}`)}
       className="bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer overflow-hidden group"
     >
-      {/* 카드 상단 */}
-      <div className="h-32 bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center group-hover:from-green-100 group-hover:to-emerald-200 transition-colors">
-        <span className="text-4xl group-hover:scale-110 transition-transform duration-300">🌱</span>
+      {/* 카드 상단: 이미지 로직 추가 */}
+      <div className="h-32 bg-gray-100 flex items-center justify-center overflow-hidden">
+        {post.imageUrl ? (
+          <img 
+            src={getFormattedImageUrl(post.imageUrl)}
+            alt={post.title}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center group-hover:from-green-100 group-hover:to-emerald-200 transition-colors">
+            <span className="text-4xl group-hover:scale-110 transition-transform duration-300">🌱</span>
+          </div>
+        )}
       </div>
 
       {/* 카드 내용 */}
@@ -37,7 +62,6 @@ const ArticlePostCard = ({ post }) => {
             <span className="text-xs text-gray-600 font-medium">{post.authorUsername}</span>
           </div>
           <div className="flex gap-3">
-            {/* ★ 조회수와 좋아요를 모두 표시 */}
             <span className="text-xs text-gray-400 flex items-center gap-1">👁️ {post.viewCount || 0}</span>
             <span className="text-xs text-orange-500 flex items-center gap-1 font-bold">❤️ {post.likesCount || 0}</span>
           </div>
