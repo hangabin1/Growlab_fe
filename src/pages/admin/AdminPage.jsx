@@ -45,12 +45,23 @@ const DIFFICULTY_OPTIONS = [
 const CATEGORY_LABEL = Object.fromEntries(CATEGORY_OPTIONS.map(o => [o.value, o.label]));
 const DIFFICULTY_LABEL = Object.fromEntries(DIFFICULTY_OPTIONS.map(o => [o.value, o.label]));
 
+// ✅ 재배 기준 필드 포함
 const EMPTY_SPECIES_FORM = {
     name: "",
     daysToMature: "",
     category: "VEGETABLE",
     difficulty: "NORMAL",
     aiPromptGuideline: "",
+    minTemperature: "",
+    maxTemperature: "",
+    minHumidity: "",
+    maxHumidity: "",
+    minPh: "",
+    maxPh: "",
+    minTds: "",
+    maxTds: "",
+    minLightHours: "",
+    maxLightHours: "",
 };
 
 const ROLE_FILTERS = [
@@ -60,6 +71,12 @@ const ROLE_FILTERS = [
 ];
 
 const ARTICLE_PAGE_SIZE = 20;
+
+const toNullableNumber = (value) => {
+    if (value === "" || value === null || value === undefined) return null;
+    const num = Number(value);
+    return Number.isNaN(num) ? null : num;
+};
 
 function AdminPage() {
     const navigate = useNavigate();
@@ -115,9 +132,7 @@ function AdminPage() {
     const [articlesListError, setArticlesListError] = useState("");
     const [articleSearch, setArticleSearch] = useState("");
 
-    // ✅ 펼쳐진 게시글 id (한 번에 하나만 펼침)
     const [expandedArticleId, setExpandedArticleId] = useState(null);
-    // ✅ 게시글별 댓글 캐시: { [articleId]: { loading, error, list } }
     const [articleComments, setArticleComments] = useState({});
 
     useEffect(() => {
@@ -245,6 +260,16 @@ function AdminPage() {
             category: sp.category ?? "VEGETABLE",
             difficulty: sp.difficulty ?? "NORMAL",
             aiPromptGuideline: sp.aiPromptGuideline ?? "",
+            minTemperature: sp.minTemperature ?? "",
+            maxTemperature: sp.maxTemperature ?? "",
+            minHumidity: sp.minHumidity ?? "",
+            maxHumidity: sp.maxHumidity ?? "",
+            minPh: sp.minPh ?? "",
+            maxPh: sp.maxPh ?? "",
+            minTds: sp.minTds ?? "",
+            maxTds: sp.maxTds ?? "",
+            minLightHours: sp.minLightHours ?? "",
+            maxLightHours: sp.maxLightHours ?? "",
         });
         setSpeciesCreateError("");
         setSpeciesCreateMessage("");
@@ -272,6 +297,16 @@ function AdminPage() {
             category: speciesForm.category,
             difficulty: speciesForm.difficulty,
             aiPromptGuideline: speciesForm.aiPromptGuideline.trim() || null,
+            minTemperature: toNullableNumber(speciesForm.minTemperature),
+            maxTemperature: toNullableNumber(speciesForm.maxTemperature),
+            minHumidity: toNullableNumber(speciesForm.minHumidity),
+            maxHumidity: toNullableNumber(speciesForm.maxHumidity),
+            minPh: toNullableNumber(speciesForm.minPh),
+            maxPh: toNullableNumber(speciesForm.maxPh),
+            minTds: toNullableNumber(speciesForm.minTds),
+            maxTds: toNullableNumber(speciesForm.maxTds),
+            minLightHours: toNullableNumber(speciesForm.minLightHours),
+            maxLightHours: toNullableNumber(speciesForm.maxLightHours),
         };
 
         setSpeciesCreateLoading(true);
@@ -418,7 +453,7 @@ function AdminPage() {
     };
 
     const handleDeleteArticle = async (e, article) => {
-        e.stopPropagation(); // 행 클릭(펼치기)과 충돌 방지
+        e.stopPropagation();
         if (!window.confirm(`'${article.title}' 게시글을 삭제할까요? 댓글도 함께 삭제됩니다.`)) return;
 
         try {
@@ -444,9 +479,6 @@ function AdminPage() {
         );
     }, [articles, articleSearch]);
 
-    const isArticlesScrollable = filteredArticles.length > 8;
-
-    // ✅ 게시글 행 클릭 → 댓글 펼치기/접기, 처음이면 fetch
     const handleToggleArticle = async (article) => {
         if (expandedArticleId === article.id) {
             setExpandedArticleId(null);
@@ -454,7 +486,6 @@ function AdminPage() {
         }
         setExpandedArticleId(article.id);
 
-        // 이미 캐시되어 있으면 재조회 안 함
         if (articleComments[article.id]) return;
 
         setArticleComments(prev => ({
@@ -648,7 +679,9 @@ function AdminPage() {
                 )}
             </div>
 
-            {/* 품종 등록 / 수정 */}
+            {/* ────────────────────────────────
+                ✅ 품종 등록 / 수정 (재배 기준 포함)
+            ──────────────────────────────── */}
             <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-6">
                 <div className="flex items-center justify-between mb-1">
                     <h2 className="text-base font-bold text-gray-800">
@@ -722,12 +755,81 @@ function AdminPage() {
                         </div>
                     </div>
 
+                    {/* ✅ 재배 기준 (AI 조언에 직접 대입되는 수치들) */}
+                    <div className="border-t border-gray-100 pt-3 mt-1">
+                        <p className="text-xs font-semibold text-gray-600 mb-2">
+                            🌡 재배 기준 <span className="text-gray-400 font-normal">(선택 입력, AI 조언에 직접 반영돼요)</span>
+                        </p>
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                            <div className="flex flex-col gap-1">
+                                <label className="text-[11px] text-gray-400">온도 (°C)</label>
+                                <div className="flex items-center gap-1">
+                                    <input type="number" step="0.1" value={speciesForm.minTemperature}
+                                        onChange={(e) => handleSpeciesFormChange("minTemperature", e.target.value)}
+                                        placeholder="최소" className="w-full border border-gray-200 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-green-400" />
+                                    <span className="text-gray-300 text-xs">~</span>
+                                    <input type="number" step="0.1" value={speciesForm.maxTemperature}
+                                        onChange={(e) => handleSpeciesFormChange("maxTemperature", e.target.value)}
+                                        placeholder="최대" className="w-full border border-gray-200 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-green-400" />
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-[11px] text-gray-400">습도 (%)</label>
+                                <div className="flex items-center gap-1">
+                                    <input type="number" step="0.1" value={speciesForm.minHumidity}
+                                        onChange={(e) => handleSpeciesFormChange("minHumidity", e.target.value)}
+                                        placeholder="최소" className="w-full border border-gray-200 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-green-400" />
+                                    <span className="text-gray-300 text-xs">~</span>
+                                    <input type="number" step="0.1" value={speciesForm.maxHumidity}
+                                        onChange={(e) => handleSpeciesFormChange("maxHumidity", e.target.value)}
+                                        placeholder="최대" className="w-full border border-gray-200 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-green-400" />
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-[11px] text-gray-400">pH</label>
+                                <div className="flex items-center gap-1">
+                                    <input type="number" step="0.1" value={speciesForm.minPh}
+                                        onChange={(e) => handleSpeciesFormChange("minPh", e.target.value)}
+                                        placeholder="최소" className="w-full border border-gray-200 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-green-400" />
+                                    <span className="text-gray-300 text-xs">~</span>
+                                    <input type="number" step="0.1" value={speciesForm.maxPh}
+                                        onChange={(e) => handleSpeciesFormChange("maxPh", e.target.value)}
+                                        placeholder="최대" className="w-full border border-gray-200 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-green-400" />
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-[11px] text-gray-400">TDS (ppm)</label>
+                                <div className="flex items-center gap-1">
+                                    <input type="number" step="1" value={speciesForm.minTds}
+                                        onChange={(e) => handleSpeciesFormChange("minTds", e.target.value)}
+                                        placeholder="최소" className="w-full border border-gray-200 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-green-400" />
+                                    <span className="text-gray-300 text-xs">~</span>
+                                    <input type="number" step="1" value={speciesForm.maxTds}
+                                        onChange={(e) => handleSpeciesFormChange("maxTds", e.target.value)}
+                                        placeholder="최대" className="w-full border border-gray-200 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-green-400" />
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-[11px] text-gray-400">조명시간 (h)</label>
+                                <div className="flex items-center gap-1">
+                                    <input type="number" step="0.5" value={speciesForm.minLightHours}
+                                        onChange={(e) => handleSpeciesFormChange("minLightHours", e.target.value)}
+                                        placeholder="최소" className="w-full border border-gray-200 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-green-400" />
+                                    <span className="text-gray-300 text-xs">~</span>
+                                    <input type="number" step="0.5" value={speciesForm.maxLightHours}
+                                        onChange={(e) => handleSpeciesFormChange("maxLightHours", e.target.value)}
+                                        placeholder="최대" className="w-full border border-gray-200 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-green-400" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">AI 분석 가이드라인 (선택)</label>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">생육 특이사항 (선택)</label>
                         <textarea
                             value={speciesForm.aiPromptGuideline}
                             onChange={(e) => handleSpeciesFormChange("aiPromptGuideline", e.target.value)}
-                            placeholder="Vision AI가 이 품종의 생육 상태를 분석할 때 참고할 설명을 입력하세요."
+                            placeholder="예: 고온 환경에서 웃자람 및 생육 스트레스를 받을 수 있음"
                             rows={3}
                             maxLength={500}
                             className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none"
