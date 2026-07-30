@@ -35,3 +35,13 @@ export const deleteUserApi = (password, token) =>
             Authorization: `Bearer ${token}`
         }
     });
+
+// ────────────────────────────────
+// ✅ 이메일 인증 API
+// ────────────────────────────────
+
+export const sendEmailCodeApi = (email) =>
+    axios.post(`${API_BASE}/email/send-code`, { email });
+
+export const verifyEmailCodeApi = (email, code) =>
+    axios.post(`${API_BASE}/email/verify-code`, { email, code });
