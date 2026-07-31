@@ -36,12 +36,19 @@ export const deleteUserApi = (password, token) =>
         }
     });
 
-// ────────────────────────────────
-// ✅ 이메일 인증 API
-// ────────────────────────────────
-
+// 이메일 인증 API
 export const sendEmailCodeApi = (email) =>
     axios.post(`${API_BASE}/email/send-code`, { email });
 
 export const verifyEmailCodeApi = (email, code) =>
     axios.post(`${API_BASE}/email/verify-code`, { email, code });
+
+
+// 비밀번호 재설정 API
+export const sendPasswordResetCodeApi = (email) =>
+    axios.post(`${API_BASE}/password-reset/send-code`, { email });
+
+// 코드 검증은 verifyEmailCodeApi를 그대로 재사용 (같은 엔드포인트)
+
+export const resetPasswordApi = (email, newPassword) =>
+    axios.post(`${API_BASE}/password-reset`, { email, newPassword });
