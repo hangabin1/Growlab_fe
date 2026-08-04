@@ -67,11 +67,15 @@ function SignUpPage() {
             setEmailMessage(res.data || "이메일 인증이 완료되었습니다.");
             setEmailVerified(true);
         } catch (err) {
-            setEmailError(
+            const msg =
                 err.response?.data ||
                 err.response?.data?.message ||
-                "인증코드 확인에 실패했습니다."
-            );
+                "인증코드 확인에 실패했습니다.";
+            setEmailError(msg);
+            // ✅ 시도 횟수 초과 메시지면 입력창을 비우고 재발송을 유도
+            if (msg.includes("초과") || msg.includes("다시 받아주세요")) {
+                setCode("");
+            }
         } finally {
             setVerifyLoading(false);
         }
