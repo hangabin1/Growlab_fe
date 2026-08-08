@@ -94,7 +94,7 @@ function SelectPlantModal({ serialNumber, portIndex, onClose, onSuccess }) {
                 // 포트 등록 모드: 기존대로 식물 생성
                 await createPlantApi({
                     name:        plantName.trim(),
-                    plantStage:  "SEED",
+                    stageIndex:  0, // ✅ plantStage: "SEED" -> stageIndex: 0 (첫 단계)으로 교체
                     plantedAt:   new Date().toISOString(),
                     germinatedAt: null,
                     maturedAt:   null,
@@ -258,6 +258,15 @@ function SelectPlantModal({ serialNumber, portIndex, onClose, onSuccess }) {
                                         <div className="bg-gray-50 rounded-lg p-2.5 text-center">
                                             <div className="text-xs text-gray-400">🧩 난이도</div>
                                             <div className="text-sm font-bold text-gray-700 mt-0.5">{DIFFICULTY_LABEL[selected.difficulty] || selected.difficulty}</div>
+                                        </div>
+                                    )}
+                                    {/* ✅ 이 품종의 생육 단계 목록 표시 */}
+                                    {selected.stageNames && selected.stageNames.length > 0 && (
+                                        <div className="bg-gray-50 rounded-lg p-2.5 text-center">
+                                            <div className="text-xs text-gray-400">🌾 생육 단계 ({selected.stageNames.length}단계)</div>
+                                            <div className="text-xs font-medium text-gray-700 mt-0.5">
+                                                {selected.stageNames.join(" → ")}
+                                            </div>
                                         </div>
                                     )}
                                     {selected.aiPromptGuideline && (
