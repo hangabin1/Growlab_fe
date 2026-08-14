@@ -45,7 +45,7 @@ const DIFFICULTY_OPTIONS = [
 const CATEGORY_LABEL = Object.fromEntries(CATEGORY_OPTIONS.map(o => [o.value, o.label]));
 const DIFFICULTY_LABEL = Object.fromEntries(DIFFICULTY_OPTIONS.map(o => [o.value, o.label]));
 
-// ✅ 재배 기준 + 생육 단계명 필드 포함
+// ✅ 재배 기준 + 생육 단계(이름 + 시작일) 필드 포함
 const EMPTY_SPECIES_FORM = {
     name: "",
     daysToMature: "",
@@ -62,7 +62,8 @@ const EMPTY_SPECIES_FORM = {
     maxTds: "",
     minLightHours: "",
     maxLightHours: "",
-    stageNames: ["씨앗", "발아", "수확"], // ✅ 생육 단계 (기본 3단계, 자유롭게 추가/삭제 가능)
+    stageNames: ["씨앗", "발아", "수확"],
+    stageDurationDays: [0, 7, 14],
 };
 
 const ROLE_FILTERS = [
@@ -272,6 +273,9 @@ function AdminPage() {
             minLightHours: sp.minLightHours ?? "",
             maxLightHours: sp.maxLightHours ?? "",
             stageNames: sp.stageNames && sp.stageNames.length > 0 ? [...sp.stageNames] : ["씨앗", "발아", "수확"],
+            stageDurationDays: sp.stageDurationDays && sp.stageDurationDays.length > 0
+                ? [...sp.stageDurationDays]
+                : [0, 7, 14],
         });
         setSpeciesCreateError("");
         setSpeciesCreateMessage("");
@@ -287,14 +291,35 @@ function AdminPage() {
         });
     };
 
+    // ✅ 생육 단계 시작일 조작 핸들러
+    const handleStageDurationChange = (index, value) => {
+        setSpeciesForm(prev => {
+            const next = [...prev.stageDurationDays];
+            next[index] = value;
+            return { ...prev, stageDurationDays: next };
+        });
+    };
+
     const handleAddStage = () => {
-        setSpeciesForm(prev => ({ ...prev, stageNames: [...prev.stageNames, ""] }));
+        setSpeciesForm(prev => {
+            const lastDuration = prev.stageDurationDays[prev.stageDurationDays.length - 1];
+            const suggestedNext = (Number(lastDuration) || 0) + 7;
+            return {
+                ...prev,
+                stageNames: [...prev.stageNames, ""],
+                stageDurationDays: [...prev.stageDurationDays, suggestedNext],
+            };
+        });
     };
 
     const handleRemoveStage = (index) => {
         setSpeciesForm(prev => {
             if (prev.stageNames.length <= 1) return prev; // 최소 1단계는 유지
-            return { ...prev, stageNames: prev.stageNames.filter((_, i) => i !== index) };
+            return {
+                ...prev,
+                stageNames: prev.stageNames.filter((_, i) => i !== index),
+                stageDurationDays: prev.stageDurationDays.filter((_, i) => i !== index),
+            };
         });
     };
 
@@ -319,6 +344,22 @@ function AdminPage() {
             return;
         }
 
+        // ✅ 시작일 검증: 숫자, 0 이상, 오름차순
+        const cleanedDurations = speciesForm.stageDurationDays
+            .slice(0, speciesForm.stageNames.length)
+            .map(d => Number(d));
+
+        if (cleanedDurations.some(d => Number.isNaN(d) || d < 0)) {
+            setSpeciesCreateError("각 단계 시작일은 0 이상의 숫자로 입력해주세요.");
+            return;
+        }
+        for (let i = 1; i < cleanedDurations.length; i++) {
+            if (cleanedDurations[i] < cleanedDurations[i - 1]) {
+                setSpeciesCreateError("단계 시작일은 앞 단계보다 같거나 커야 합니다 (오름차순).");
+                return;
+            }
+        }
+
         const payload = {
             name,
             daysToMature: days,
@@ -336,6 +377,7 @@ function AdminPage() {
             minLightHours: toNullableNumber(speciesForm.minLightHours),
             maxLightHours: toNullableNumber(speciesForm.maxLightHours),
             stageNames: cleanedStageNames,
+            stageDurationDays: cleanedDurations,
         };
 
         setSpeciesCreateLoading(true);
@@ -709,7 +751,7 @@ function AdminPage() {
             </div>
 
             {/* ────────────────────────────────
-                ✅ 품종 등록 / 수정 (재배 기준 + 생육 단계 포함)
+                ✅ 품종 등록 / 수정 (재배 기준 + 생육 단계 + 시작일 포함)
             ──────────────────────────────── */}
             <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-6">
                 <div className="flex items-center justify-between mb-1">
@@ -784,7 +826,7 @@ function AdminPage() {
                         </div>
                     </div>
 
-                    {/* ✅ 생육 단계명 (품종마다 개수가 다를 수 있음) */}
+                    {/* ✅ 생육 단계명 + 시작일 (품종마다 개수가 다를 수 있음) */}
                     <div className="border-t border-gray-100 pt-3 mt-1">
                         <div className="flex items-center justify-between mb-2">
                             <p className="text-xs font-semibold text-gray-600">
@@ -796,6 +838,9 @@ function AdminPage() {
                                 className="text-xs text-green-600 hover:text-green-700 font-medium"
                             >+ 단계 추가</button>
                         </div>
+                        <p className="text-[11px] text-gray-400 mb-2">
+                            "며칠째부터"는 재배 시작일 기준 경과일이에요. 이 날짜가 지나면 카메라 인식 여부와 상관없이 자동으로 다음 단계로 넘어가요.
+                        </p>
                         <div className="flex flex-col gap-2">
                             {speciesForm.stageNames.map((stage, i) => (
                                 <div key={i} className="flex items-center gap-2">
@@ -807,6 +852,17 @@ function AdminPage() {
                                         placeholder={`예: ${i === 0 ? "씨앗" : i === speciesForm.stageNames.length - 1 ? "수확" : "중간 단계"}`}
                                         className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-green-400"
                                     />
+                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            value={speciesForm.stageDurationDays[i] ?? ""}
+                                            onChange={(e) => handleStageDurationChange(i, e.target.value)}
+                                            placeholder="0"
+                                            className="w-16 border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-right focus:outline-none focus:ring-2 focus:ring-green-400"
+                                        />
+                                        <span className="text-[11px] text-gray-400 whitespace-nowrap">일째~</span>
+                                    </div>
                                     <button
                                         type="button"
                                         onClick={() => handleRemoveStage(i)}
@@ -956,14 +1012,14 @@ function AdminPage() {
                     </div>
                 ) : (
                     <div className={`overflow-x-auto ${isSpeciesScrollable ? "max-h-[420px] overflow-y-auto" : ""}`}>
-                        <table className="w-full text-sm min-w-[640px]">
+                        <table className="w-full text-sm min-w-[680px]">
                             <thead className={isSpeciesScrollable ? "sticky top-0 bg-white z-10" : ""}>
                                 <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
                                     <th className="py-2 pr-2 font-medium">품종 이름</th>
                                     <th className="py-2 pr-2 font-medium">카테고리</th>
                                     <th className="py-2 pr-2 font-medium">난이도</th>
                                     <th className="py-2 pr-2 font-medium">성숙 기간</th>
-                                    <th className="py-2 pr-2 font-medium">생육 단계</th>
+                                    <th className="py-2 pr-2 font-medium">생육 단계 (시작일)</th>
                                     <th className="py-2 font-medium text-right">관리</th>
                                 </tr>
                             </thead>
@@ -985,8 +1041,14 @@ function AdminPage() {
                                             </span>
                                         </td>
                                         <td className="py-3 pr-2 text-gray-400 text-xs">{s.daysToMature}일</td>
-                                        <td className="py-3 pr-2 text-gray-400 text-xs max-w-[180px] truncate" title={s.stageNames?.join(" → ")}>
-                                            {s.stageCount ?? s.stageNames?.length ?? "-"}단계 {s.stageNames?.length > 0 && `(${s.stageNames.join(" → ")})`}
+                                        <td
+                                            className="py-3 pr-2 text-gray-400 text-xs max-w-[240px] truncate"
+                                            title={s.stageNames?.map((name, i) => `${name}(${s.stageDurationDays?.[i] ?? "?"}일)`).join(" → ")}
+                                        >
+                                            {s.stageCount ?? s.stageNames?.length ?? "-"}단계
+                                            {s.stageNames?.length > 0 && (
+                                                <> ({s.stageNames.map((name, i) => `${name}${s.stageDurationDays?.[i] != null ? `(${s.stageDurationDays[i]}일)` : ""}`).join(" → ")})</>
+                                            )}
                                         </td>
                                         <td className="py-3 text-right">
                                             <div className="flex justify-end gap-3">
