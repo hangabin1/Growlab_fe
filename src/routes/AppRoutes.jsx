@@ -15,6 +15,7 @@ import MonitoringPage from "../pages/monitoring/MonitoringPage";
 import MarketPricePage from "../pages/marketprice/Marketpricepage";
 import AdminPage from "../pages/admin/AdminPage";
 import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
+import FindIdPage from "../pages/auth/FindIdPage";
 
 function AppRoutes() {
     return (
@@ -37,6 +38,7 @@ function AppRoutes() {
 
             {/* 인증 관련 */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/find-id" element={<FindIdPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/signup" element={<SignUpPage />} />
 
