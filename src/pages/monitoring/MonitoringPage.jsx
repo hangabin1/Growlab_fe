@@ -13,8 +13,8 @@ const SPECIES_EMOJI = {
     "산세베리아 스투키": "🪴",
 };
 
-const STAGE_LABEL = { SEED: "씨앗", GERMINATION: "발아", MATURE: "성숙" };
-const STAGE_INDEX = { SEED: 0, GERMINATION: 1, MATURE: 2 };
+// ❌ 하드코딩된 3단계 상수 제거됨 (STAGE_LABEL, STAGE_INDEX)
+// 이제 각 품종의 단계는 device.stageNames / plant.stageIndex / plant.stageName으로 처리
 
 const getSensorKey = (serial) => `growlab_sensor_${serial}`;
 const getNoticeKey = (serial) => `growlab_notices_${serial}`;
@@ -36,14 +36,15 @@ const fetchAiData = async (deviceData, plantData) => {
             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
             body: JSON.stringify({
                 serialNumber: deviceData.serialNumber,
-                speciesName: plantData?.species || null,
+                speciesId: deviceData.speciesId ?? null,
+                speciesName: plantData?.species || deviceData.speciesName || null,
                 temperature: deviceData.temperature,
                 humidity: deviceData.humidity,
                 ph: deviceData.ph,
                 ec: deviceData.ec,
                 waterLevel: deviceData.waterLevel,
                 daysSincePlanted,
-                plantStage: plantData?.plantStage || null,
+                plantStage: plantData?.stageName || null, // ✅ stageName 기반
             })
         });
         const data = await response.json();
@@ -133,7 +134,6 @@ const calcVisionScore = (sensorData) => {
     let score = 100;
     const issues = [];
 
-    // ===== 온도 (최적 23도) =====
     if (temperature != null) {
         const diff = Math.abs(temperature - 23);
 
@@ -149,7 +149,6 @@ const calcVisionScore = (sensorData) => {
         }
     } else score -= 5;
 
-    // ===== 습도 (최적 65%) =====
     if (humidity != null) {
         const diff = Math.abs(humidity - 65);
 
@@ -165,7 +164,6 @@ const calcVisionScore = (sensorData) => {
         }
     } else score -= 5;
 
-    // ===== pH (최적 6.0) =====
     if (ph != null) {
         const diff = Math.abs(ph - 6.0);
 
@@ -181,7 +179,6 @@ const calcVisionScore = (sensorData) => {
         }
     } else score -= 5;
 
-    // ===== TDS (최적 1000ppm) =====
     if (tds != null) {
         const diff = Math.abs(tds - 1000);
 
@@ -197,7 +194,6 @@ const calcVisionScore = (sensorData) => {
         }
     } else score -= 5;
 
-    // ===== 수위 =====
     if (water_level_status === false) {
         score -= 15;
         issues.push("수위 부족");
@@ -253,9 +249,11 @@ function GrowthSummary({ text }) {
     );
 }
 
-// ── 생육 타임라인 차트 ────────────────────────────────────────
-function GrowthTimelineChart({ selectedPlant, prediction }) {
+// ── 생육 타임라인 차트 (품종별 가변 단계 지원) ──────────────────
+function GrowthTimelineChart({ selectedPlant, prediction, stageNames = ["씨앗", "발아", "수확"] }) {
     const [hovered, setHovered] = useState(null);
+    const stageCount = stageNames.length;
+    const lastStageIdx = Math.max(stageCount - 1, 1); // 0으로 나누기 방지
 
     if (!selectedPlant) {
         return (
@@ -271,9 +269,8 @@ function GrowthTimelineChart({ selectedPlant, prediction }) {
         const normalized = str.replace(" ", "T").replace(/(\.\d{3})\d+/, "$1");
         return new Date(normalized);
     };
-    const plantedAt    = parseDate(selectedPlant.plantedAt);
-    const germinatedAt = parseDate(selectedPlant.germinatedAt);
-    const maturedAt    = parseDate(selectedPlant.maturedAt);
+    const plantedAt = parseDate(selectedPlant.plantedAt);
+    const maturedAt = parseDate(selectedPlant.maturedAt);
 
     if (!plantedAt || isNaN(plantedAt.getTime())) {
         return (
@@ -282,10 +279,10 @@ function GrowthTimelineChart({ selectedPlant, prediction }) {
             </div>
         );
     }
-    const currentStageIdx = STAGE_INDEX[selectedPlant.plantStage] ?? 0;
 
-    const germinationEtaDate = (!germinatedAt && prediction?.germinationEtaHours)
-        ? addHours(TODAY, prediction.germinationEtaHours) : null;
+    // ✅ 서버가 주는 stageIndex를 그대로 사용 (0 ~ stageCount-1)
+    const currentStageIdx = selectedPlant.stageIndex ?? 0;
+
     const matureEtaDate = (!maturedAt && prediction?.matureEtaHours)
         ? addHours(TODAY, prediction.matureEtaHours) : null;
 
@@ -298,16 +295,15 @@ function GrowthTimelineChart({ selectedPlant, prediction }) {
     const CH = H - PAD.top - PAD.bottom;
 
     const cx = (date) => PAD.left + ((date - plantedAt) / totalMs) * CW;
-    const cy = (stage) => PAD.top + CH - (stage / 2) * CH;
+    // ✅ 고정 /2 대신 lastStageIdx로 나눠서 N단계 일반화
+    const cy = (stage) => PAD.top + CH - (stage / lastStageIdx) * CH;
 
-    const realPts = [{ date: plantedAt, stage: 0, label: "파종" }];
-    if (germinatedAt) realPts.push({ date: germinatedAt, stage: 1, label: "발아" });
-    if (maturedAt)    realPts.push({ date: maturedAt,    stage: 2, label: "수확" });
-    else              realPts.push({ date: TODAY, stage: currentStageIdx, label: "현재" });
+    const realPts = [{ date: plantedAt, stage: 0, label: stageNames[0] }];
+    if (maturedAt) realPts.push({ date: maturedAt, stage: lastStageIdx, label: stageNames[lastStageIdx] });
+    else realPts.push({ date: TODAY, stage: currentStageIdx, label: "현재" });
 
     const predPts = [{ date: TODAY, stage: currentStageIdx }];
-    if (germinationEtaDate) predPts.push({ date: germinationEtaDate, stage: 1 });
-    if (matureEtaDate)      predPts.push({ date: matureEtaDate,      stage: 2 });
+    if (matureEtaDate) predPts.push({ date: matureEtaDate, stage: lastStageIdx });
 
     const realPath = realPts.map((p, i) =>
         `${i === 0 ? "M" : "L"}${cx(p.date).toFixed(1)},${cy(p.stage).toFixed(1)}`
@@ -322,11 +318,10 @@ function GrowthTimelineChart({ selectedPlant, prediction }) {
     const todayX = cx(TODAY);
 
     const xLabels = [
-        { date: plantedAt, lines: [fmtDate(plantedAt), "파종"] },
-        ...(germinatedAt ? [{ date: germinatedAt, lines: [fmtDate(germinatedAt), "발아"] }] : []),
+        { date: plantedAt, lines: [fmtDate(plantedAt), stageNames[0]] },
         { date: TODAY, lines: ["오늘"], highlight: true },
-        ...(matureEtaDate ? [{ date: matureEtaDate, lines: [fmtDate(matureEtaDate), "수확예상"], pred: true }] : []),
-        ...(maturedAt ? [{ date: maturedAt, lines: [fmtDate(maturedAt), "수확"], done: true }] : []),
+        ...(matureEtaDate ? [{ date: matureEtaDate, lines: [fmtDate(matureEtaDate), `${stageNames[lastStageIdx]}예상`], pred: true }] : []),
+        ...(maturedAt ? [{ date: maturedAt, lines: [fmtDate(maturedAt), stageNames[lastStageIdx]], done: true }] : []),
     ];
 
     const daysLeft = matureEtaDate
@@ -338,8 +333,9 @@ function GrowthTimelineChart({ selectedPlant, prediction }) {
         try { stageProbs = JSON.parse(prediction.stageProbs.replace(/'/g, '"')); } catch {}
     }
 
-    const lgbLabel = prediction
-        ? ["씨앗", "발아", "수확"][prediction.predictedStage]
+    // ✅ 예측 라벨도 stageNames 배열에서 동적으로
+    const lgbLabel = prediction?.predictedStage != null
+        ? stageNames[Math.min(prediction.predictedStage, lastStageIdx)]
         : null;
 
     return (
@@ -347,7 +343,7 @@ function GrowthTimelineChart({ selectedPlant, prediction }) {
             <div className="flex items-center gap-2 flex-wrap">
                 {daysLeft !== null && (
                     <span className="text-xs bg-green-50 text-green-700 border border-green-200 px-2.5 py-1 rounded-full font-medium">
-                        🌾 수확 예상 D-{daysLeft}일 ({fmtDate(matureEtaDate)})
+                        🌾 {stageNames[lastStageIdx]} 예상 D-{daysLeft}일 ({fmtDate(matureEtaDate)})
                     </span>
                 )}
                 {lgbLabel && (
@@ -368,13 +364,14 @@ function GrowthTimelineChart({ selectedPlant, prediction }) {
                             <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.08" />
                         </filter>
                     </defs>
-                    {[0, 1, 2].map(s => (
+                    {/* ✅ 0 ~ lastStageIdx까지 N개 가로선/라벨 */}
+                    {stageNames.map((label, s) => (
                         <g key={s}>
                             <line x1={PAD.left} y1={cy(s)} x2={W - PAD.right} y2={cy(s)}
                                 stroke="#f3f4f6" strokeWidth="1" />
                             <text x={PAD.left - 6} y={cy(s)} textAnchor="end"
                                 dominantBaseline="middle" fontSize="9" fill="#9ca3af">
-                                {["씨앗", "발아", "수확"][s]}
+                                {label}
                             </text>
                         </g>
                     ))}
@@ -393,7 +390,7 @@ function GrowthTimelineChart({ selectedPlant, prediction }) {
                     {realPts.filter(p => p.label !== "현재").map((p, i) => (
                         <circle key={i}
                             cx={cx(p.date)} cy={cy(p.stage)} r="5"
-                            fill={["#86efac", "#4ade80", "#16a34a"][p.stage]}
+                            fill={p.stage === lastStageIdx ? "#16a34a" : "#86efac"}
                             stroke="white" strokeWidth="2"
                             style={{ cursor: "pointer" }}
                             onMouseEnter={() => setHovered(p)}
@@ -404,19 +401,11 @@ function GrowthTimelineChart({ selectedPlant, prediction }) {
                         <animate attributeName="r" values="5;7;5" dur="2s" repeatCount="indefinite" />
                         <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite" />
                     </circle>
-                    {germinationEtaDate && (
-                        <g onMouseEnter={() => setHovered({ date: germinationEtaDate, stage: 1, label: "발아 예상" })}>
-                            <circle cx={cx(germinationEtaDate)} cy={cy(1)} r="5"
-                                fill="#bbf7d0" stroke="white" strokeWidth="2" style={{ cursor: "pointer" }} />
-                            <circle cx={cx(germinationEtaDate)} cy={cy(1)} r="9"
-                                fill="none" stroke="#86efac" strokeWidth="1.5" opacity="0.5" />
-                        </g>
-                    )}
                     {matureEtaDate && (
-                        <g onMouseEnter={() => setHovered({ date: matureEtaDate, stage: 2, label: "수확 예상" })}>
-                            <circle cx={cx(matureEtaDate)} cy={cy(2)} r="5"
+                        <g onMouseEnter={() => setHovered({ date: matureEtaDate, stage: lastStageIdx, label: `${stageNames[lastStageIdx]} 예상` })}>
+                            <circle cx={cx(matureEtaDate)} cy={cy(lastStageIdx)} r="5"
                                 fill="#bbf7d0" stroke="white" strokeWidth="2" style={{ cursor: "pointer" }} />
-                            <circle cx={cx(matureEtaDate)} cy={cy(2)} r="9"
+                            <circle cx={cx(matureEtaDate)} cy={cy(lastStageIdx)} r="9"
                                 fill="none" stroke="#86efac" strokeWidth="1.5" opacity="0.5" />
                         </g>
                     )}
@@ -447,7 +436,7 @@ function GrowthTimelineChart({ selectedPlant, prediction }) {
                                     filter="url(#tip-shadow)" />
                                 <text x={bx + 37} y={ty - 4} textAnchor="middle"
                                     fontSize="9" fill="#374151" fontWeight="600">
-                                    {hovered.label || ["파종","발아","수확"][hovered.stage]}
+                                    {hovered.label || stageNames[hovered.stage]}
                                 </text>
                                 <text x={bx + 37} y={ty + 8} textAnchor="middle"
                                     fontSize="8" fill="#6b7280">
@@ -468,14 +457,14 @@ function GrowthTimelineChart({ selectedPlant, prediction }) {
                     },
                     {
                         label: "현재 단계",
-                        value: STAGE_LABEL[selectedPlant.plantStage],
+                        value: stageNames[currentStageIdx] ?? "-",
                         sub: lgbLabel ? `72h후 → ${lgbLabel}` : "예측 대기 중",
                     },
                     daysLeft !== null
-                        ? { label: "수확 예상", value: fmtDate(matureEtaDate), sub: `D-${daysLeft}일`, highlight: true }
+                        ? { label: `${stageNames[lastStageIdx]} 예상`, value: fmtDate(matureEtaDate), sub: `D-${daysLeft}일`, highlight: true }
                         : maturedAt
-                        ? { label: "수확 완료", value: fmtDate(maturedAt), sub: "✓ 완료", highlight: true }
-                        : { label: "수확 예상", value: "-", sub: "예측 수집 중" },
+                        ? { label: `${stageNames[lastStageIdx]} 완료`, value: fmtDate(maturedAt), sub: "✓ 완료", highlight: true }
+                        : { label: `${stageNames[lastStageIdx]} 예상`, value: "-", sub: "예측 수집 중" },
                 ].map(({ label, value, sub, highlight }) => (
                     <div key={label}
                         className={`rounded-xl p-2.5 text-center ${highlight ? "bg-green-50 border border-green-100" : "bg-gray-50"}`}>
@@ -486,12 +475,13 @@ function GrowthTimelineChart({ selectedPlant, prediction }) {
                 ))}
             </div>
 
+            {/* ✅ N단계 확률 막대도 stageNames 기준으로 순회 */}
             {stageProbs && (
                 <div className="flex flex-col gap-1 pt-1 border-t border-gray-50">
                     <p className="text-[10px] text-gray-400 mb-0.5">72h 후 단계별 확률</p>
-                    {["씨앗", "발아", "수확"].map((name, i) => (
+                    {stageNames.map((name, i) => (
                         <div key={name} className="flex items-center gap-1.5">
-                            <span className="text-[10px] text-gray-400 w-6">{name}</span>
+                            <span className="text-[10px] text-gray-400 w-10 truncate">{name}</span>
                             <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                                 <div className="h-full bg-green-400 rounded-full transition-all"
                                     style={{ width: `${Math.round((stageProbs[i] ?? 0) * 100)}%` }} />
@@ -544,7 +534,6 @@ function MonitoringPage() {
     const [aiAdvice, setAiAdvice] = useState(null);
     const [aiAnalysis, setAiAnalysis] = useState(null);
 
-    // ── 분리된 로딩 상태 ───────────────────────────────────────
     const [visionAiLoading, setVisionAiLoading] = useState(false);
     const [adviceAiLoading, setAdviceAiLoading] = useState(false);
 
@@ -568,7 +557,6 @@ function MonitoringPage() {
     const [ledSaving, setLedSaving] = useState(false);
     const [captureSaving, setCaptureSaving] = useState(false);
 
-    // ── Vision AI 분석만 새로고침 (점수 + 분석 섹션) ─────────────
     const handleRefreshVision = useCallback(async (deviceData, plantData) => {
         if (!deviceData) return;
         setVisionAiLoading(true);
@@ -577,7 +565,6 @@ function MonitoringPage() {
         setVisionAiLoading(false);
     }, []);
 
-    // ── AI 재배 조언만 새로고침 (조언 텍스트) ────────────────────
     const handleRefreshAdvice = useCallback(async (deviceData, plantData) => {
         if (!deviceData) return;
         setAdviceAiLoading(true);
@@ -608,7 +595,6 @@ function MonitoringPage() {
                         }
                     }
 
-                    // 초기 로드 시 한 번의 API 호출로 둘 다 세팅
                     setVisionAiLoading(true);
                     setAdviceAiLoading(true);
                     const representativePlant = found.plants?.find(p => p.species) ?? null;
@@ -777,7 +763,11 @@ function MonitoringPage() {
         ? Math.floor((new Date() - new Date(selectedPlant.plantedAt.replace(" ", "T"))) / (1000 * 60 * 60 * 24))
         : null;
 
-    // 센서 기반 점수 계산
+    // ✅ 이 기기 대표 품종의 단계 목록 (없으면 기본 3단계)
+    const stageNames = device.stageNames && device.stageNames.length > 0
+        ? device.stageNames
+        : ["씨앗", "발아", "수확"];
+
     const visionScore = calcVisionScore(sensorData);
 
     return (
@@ -811,7 +801,7 @@ function MonitoringPage() {
                             <div className="flex flex-col gap-2 text-xs">
                                 {[
                                     { label: "재배 일수", value: daysSincePlanted !== null ? `${daysSincePlanted}일차` : "-" },
-                                    { label: "생육 단계", value: STAGE_LABEL[selectedPlant.plantStage] || selectedPlant.plantStage },
+                                    { label: "생육 단계", value: selectedPlant.stageName || "-" }, // ✅ STAGE_LABEL 하드코딩 제거, 서버가 준 stageName 사용
                                     { label: "종류", value: selectedPlant.species || "-" },
                                 ].map(({ label, value }) => (
                                     <div key={label} className="flex justify-between items-center py-1.5 border-b border-gray-50 last:border-0">
@@ -825,14 +815,13 @@ function MonitoringPage() {
                         )}
                     </div>
 
-                    {/* Vision AI 분석 — 센서 기반 실시간 점수 + AI 파싱 결과 */}
+                    {/* Vision AI 분석 */}
                     <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
                         <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
                                 <span className="text-sm">🔍</span>
                                 <h2 className="text-sm font-semibold text-gray-700">Vision AI 분석</h2>
                             </div>
-                            {/* Vision AI 전용 새로고침 버튼 */}
                             <button
                                 onClick={() => handleRefreshVision(device, selectedPlant)}
                                 disabled={visionAiLoading}
@@ -842,7 +831,6 @@ function MonitoringPage() {
                             </button>
                         </div>
 
-                        {/* 센서 기반 점수 — 항상 표시 */}
                         <div className="flex items-center gap-3 mb-3 p-2.5 bg-gray-50 rounded-xl">
                             <div className="relative w-12 h-12 flex-shrink-0">
                                 <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
@@ -868,7 +856,6 @@ function MonitoringPage() {
                             </div>
                         </div>
 
-                        {/* 생육 상태 / 질병 위험 — Vision AI 로딩 상태 사용 */}
                         {visionAiLoading ? (
                             <div className="flex flex-col gap-2">
                                 {["생육 상태", "질병 위험"].map(label => (
@@ -900,7 +887,6 @@ function MonitoringPage() {
                                         {visionScore.diseaseRisk}
                                     </span>
                                 </div>
-                                {/* AI가 파싱한 생육 요약이 있으면 한 줄 표시 */}
                                 {aiAnalysis?.growth && <GrowthSummary text={aiAnalysis.growth} />}
                             </div>
                         )}
@@ -1087,7 +1073,8 @@ function MonitoringPage() {
                             </span>
                         </div>
 
-                        <GrowthTimelineChart selectedPlant={selectedPlant} prediction={prediction} />
+                        {/* ✅ 이 기기 대표 품종의 stageNames를 그대로 전달 */}
+                        <GrowthTimelineChart selectedPlant={selectedPlant} prediction={prediction} stageNames={stageNames} />
                     </div>
                 </div>
 
@@ -1185,7 +1172,6 @@ function MonitoringPage() {
                                 <span className="text-sm">🤖</span>
                                 <h2 className="text-sm font-semibold text-green-700">AI 재배 조언</h2>
                             </div>
-                            {/* AI 재배 조언 전용 새로고침 버튼 */}
                             <button
                                 onClick={() => handleRefreshAdvice(device, selectedPlant)}
                                 disabled={adviceAiLoading}
