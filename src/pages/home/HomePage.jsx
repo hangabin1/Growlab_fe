@@ -2,11 +2,11 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUnreadCountApi } from "../../api/noticeApi";
 import { getUserDevicesApi, deleteDeviceApi, updatePortStatusApi } from "../../api/deviceApi";
-import { createPlantApi, deletePlantApi } from "../../api/plantApi";
+import { deletePlantApi } from "../../api/plantApi";
 import AddDeviceModal from "../../components/device/AddDeviceModal";
 import SelectPlantModal from "../../components/device/SelectPlantModal";
 import { startMonitoringPerformanceRun } from "../../utils/monitoringPerformance";
-import { resolveRanges, isInRange } from "../../utils/sensorRange";
+import { deviceSensorRanges, sharedSensorStatus } from "../../utils/sharedEnvironment";
 
 const ICONS = ["🍓", "🌿", "🌱", "🌻", "🍅", "🥬", "🌶️", "🌸"];
 
@@ -37,7 +37,7 @@ const formatSensor = (value, unit) => {
     return `${value}${unit}`;
 };
 
-function DeviceCard({ device, onDelete, onPortClick, onSelectSpecies, onOpenMonitoring }) {
+function DeviceCard({ device, onDelete, onPortClick, onOpenMonitoring }) {
     const savedIconIndex = localStorage.getItem(`device_icon_${device.serialNumber}`);
     const emoji = (savedIconIndex !== null && savedIconIndex !== undefined)
         ? (ICONS[parseInt(savedIconIndex)] || "🌱")
@@ -45,9 +45,8 @@ function DeviceCard({ device, onDelete, onPortClick, onSelectSpecies, onOpenMoni
 
     const portStatus = device.portStatus || "00000000";
 
-    // ✅ 서버 응답에서 직접 품종 정보 읽기 (localStorage 불필요)
-    const speciesName  = device.speciesName  || null;
-    const speciesEmoji = speciesName ? (SPECIES_EMOJI[speciesName] || "🌱") : null;
+    const plants = device.plants || [];
+    const speciesNames = [...new Set(plants.map(plant => plant.species || plant.speciesName).filter(Boolean))];
 
     const [sensor, setSensor] = useState(() => getSensorData(device.serialNumber));
 
@@ -80,62 +79,46 @@ function DeviceCard({ device, onDelete, onPortClick, onSelectSpecies, onOpenMoni
                     <div className="font-semibold text-gray-800 text-sm">{device.deviceNickname}</div>
                     <div className="text-xs text-gray-400">{device.serialNumber}</div>
 
-                    {speciesName ? (
-                        <div className="flex items-center gap-1 mt-0.5">
-                            <span className="text-xs text-gray-600 font-medium">
-                                {speciesEmoji} {speciesName}
-                            </span>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (portStatus.includes("1")) {
-                                        alert("포트가 켜져 있는 동안은 품종을 변경할 수 없어요.\n모든 포트를 OFF한 후 변경해주세요.");
-                                        return;
-                                    }
-                                    onSelectSpecies(device.serialNumber);
-                                }}
-                                className="text-[10px] text-blue-400 hover:text-blue-600 ml-1 underline"
-                            >변경</button>
-                        </div>
-                    ) : (
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onSelectSpecies(device.serialNumber); }}
-                            className="flex items-center gap-1 mt-0.5 text-[11px] text-yellow-600 animate-pulse"
-                        >
-                            <span>⚠️ 식물 미등록</span>
-                            <span className="underline">클릭하여 품종 선택</span>
-                        </button>
-                    )}
+                    <div className="mt-1 text-caption text-gray-600">
+                        {plants.length > 0
+                            ? "재배 중 " + plants.length + "/8 포트 · " + speciesNames.join(" · ")
+                            : "빈 포트를 눌러 식물을 추가하세요"}
+                    </div>
                 </div>
             </div>
 
             {/* 포트 박스 그리드 */}
             <div className="grid grid-cols-4 gap-2 p-2 bg-gray-50 rounded-lg border border-gray-100 mb-4">
                 {[...Array(8)].map((_, index) => {
+                    const portPlant = plants.find(plant => plant.portIndex === index);
+                    const isOccupied = Boolean(portPlant);
                     const isOn = portStatus[index] === "1";
+                    const portSpecies = portPlant?.species || portPlant?.speciesName;
                     return (
                         <div
                             key={index}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                if (!speciesName) { alert("먼저 품종을 선택해주세요."); return; }
-                                onPortClick(device, index, isOn);
+                                onPortClick(device, index, isOccupied);
                             }}
-                            className={`flex flex-col items-center justify-center h-14 rounded-md transition-all border cursor-pointer select-none ${
-                                isOn
-                                    ? "bg-green-50 border-green-300 shadow-sm hover:bg-green-100"
-                                    : "bg-gray-100 border-gray-200 opacity-60 hover:opacity-100 hover:border-green-200"
+                            className={`flex flex-col items-center justify-center h-16 rounded-md transition-all border cursor-pointer select-none ${
+                                isOccupied
+                                    ? "bg-brand-cream border-brand-olive shadow-sm hover:bg-brand-cream"
+                                    : "bg-gray-100 border-gray-200 opacity-60 hover:opacity-100 hover:border-brand-olive/40"
                             }`}
                         >
-                            <span className={`text-[8px] font-bold ${isOn ? "text-green-600" : "text-gray-400"}`}>
+                            <span className={`text-caption font-bold ${isOccupied ? "text-brand" : "text-gray-500"}`}>
                                 P{index + 1}
                             </span>
-                            {isOn ? (
-                                speciesEmoji
-                                    ? <span className="text-lg">{speciesEmoji}</span>
-                                    : <span className="text-xs font-medium text-green-600">ON</span>
+                            {isOccupied ? (
+                                <>
+                                    <span className="text-sub1" aria-hidden="true">{SPECIES_EMOJI[portSpecies] || "🌱"}</span>
+                                    <span className="max-w-full truncate px-1 text-caption text-brand" title={portSpecies || portPlant.name}>
+                                        {portSpecies || portPlant.name}{isOn ? "" : " · OFF"}
+                                    </span>
+                                </>
                             ) : (
-                                <span className="text-xs font-medium text-gray-400">OFF</span>
+                                <span className="text-caption font-medium text-gray-500">+ 추가</span>
                             )}
                         </div>
                     );
@@ -145,14 +128,15 @@ function DeviceCard({ device, onDelete, onPortClick, onSelectSpecies, onOpenMoni
             {/* 센서 수치 */}
             <div className="grid grid-cols-3 gap-2 text-center">
                 {(() => {
-                    const ranges  = resolveRanges(device);
-                    const tempOk  = isInRange(temp, ranges.temp);
-                    const humidOk = isInRange(humidity, ranges.humidity);
-                    const phOk    = isInRange(ph, ranges.ph);
-                    const tdsOk   = isInRange(tds, ranges.tds);
+                    const ranges = deviceSensorRanges(plants);
+                    const allInRange = (value, key) => sharedSensorStatus(value, ranges[key]);
+                    const tempOk  = allInRange(temp, "temp");
+                    const humidOk = allInRange(humidity, "humidity");
+                    const phOk    = allInRange(ph, "ph");
+                    const tdsOk   = allInRange(tds, "tds");
 
-                    const getColor = (hasData, isOk) => !hasData ? "text-gray-300" : isOk ? "text-green-500" : "text-orange-400";
-                    const getBg    = (hasData, isOk) => !hasData ? "bg-gray-50"    : isOk ? "bg-green-50"   : "bg-orange-50";
+                    const getColor = (hasData, isOk) => !hasData || !plants.length || isOk === null ? "text-gray-500" : isOk ? "text-brand" : "text-amber-700";
+                    const getBg    = (hasData, isOk) => !hasData || !plants.length || isOk === null ? "bg-gray-50" : isOk ? "bg-brand-cream" : "bg-amber-50";
 
                     return [
                         { label: "온도", value: formatSensor(temp, "°C"),                           color: getColor(temp     !== null, tempOk),  bg: getBg(temp     !== null, tempOk)  },
@@ -179,6 +163,9 @@ function DeviceCard({ device, onDelete, onPortClick, onSelectSpecies, onOpenMoni
                     </div>
                 ))}
             </div>
+            {plants.length > 1 && (
+                <p className="mt-2 text-caption text-gray-500">센서값은 기기 공통이며, 표시 색은 심은 모든 품종의 적정 범위를 기준으로 합니다.</p>
+            )}
         </div>
     );
 }
@@ -188,7 +175,7 @@ function HomePage() {
     const [unreadCount, setUnreadCount] = useState(0);
     const [showAddModal, setShowAddModal] = useState(false);
     const [sortKey, setSortKey]       = useState("name");
-    const [selectingSpeciesSerial, setSelectingSpeciesSerial] = useState(null);
+    const [selectingPlant, setSelectingPlant] = useState(null);
 
     const navigate = useNavigate();
 
@@ -246,8 +233,8 @@ function HomePage() {
         }
     };
 
-    const handlePortClick = async (device, portIndex, isCurrentlyOn) => {
-        if (isCurrentlyOn) {
+    const handlePortClick = async (device, portIndex, isOccupied) => {
+        if (isOccupied) {
             const portPlant = device.plants?.find(p => p.portIndex === portIndex);
             if (portPlant) {
                 if (!window.confirm(`P${portIndex + 1} 포트를 OFF하면 식물이 삭제됩니다. 계속할까요?`)) return;
@@ -267,30 +254,8 @@ function HomePage() {
                 alert("포트 제어에 실패했습니다.");
             }
         } else {
-            // ✅ 서버에서 받은 speciesId 사용
-            if (!device.speciesId) { alert("먼저 품종을 선택해주세요."); return; }
-            try {
-                await createPlantApi({
-                    name:        device.speciesName,
-                    speciesId:   device.speciesId,
-                    serialNumber: device.serialNumber,
-                    portIndex,
-                    plantStage:  "SEED",
-                    plantedAt:   new Date().toISOString(),
-                });
-                await updatePortStatusApi(device.serialNumber, portIndex, true);
-                await fetchDevices();
-            } catch (err) {
-                console.error(err);
-                alert(err.response?.data?.message || "식물 등록에 실패했습니다.");
-            }
+            setSelectingPlant({ serialNumber: device.serialNumber, portIndex });
         }
-    };
-
-    // ✅ 품종 선택 완료 콜백 — 서버에 이미 저장됐으므로 fetchDevices만 호출
-    const handleSpeciesSelected = async () => {
-        setSelectingSpeciesSerial(null);
-        await fetchDevices();
     };
 
     const handleOpenMonitoring = (serial, portIndex) => {
@@ -396,7 +361,6 @@ function HomePage() {
                                 device={device}
                                 onDelete={handleDelete}
                                 onPortClick={handlePortClick}
-                                onSelectSpecies={(serial) => setSelectingSpeciesSerial(serial)}
                                 onOpenMonitoring={handleOpenMonitoring}
                             />
                         ))}
@@ -411,12 +375,13 @@ function HomePage() {
                 />
             )}
 
-            {selectingSpeciesSerial && (
+            {selectingPlant && (
                 <SelectPlantModal
-                    serialNumber={selectingSpeciesSerial}
-                    portIndex={null}
-                    onClose={() => setSelectingSpeciesSerial(null)}
-                    onSuccess={handleSpeciesSelected}
+                    serialNumber={selectingPlant.serialNumber}
+                    portIndex={selectingPlant.portIndex}
+                    existingPlants={devices.find(device => device.serialNumber === selectingPlant.serialNumber)?.plants || []}
+                    onClose={() => setSelectingPlant(null)}
+                    onSuccess={fetchDevices}
                 />
             )}
         </div>

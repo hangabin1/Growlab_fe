@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { getAllSpeciesApi } from "../../api/speciesApi";
-import { createPlantApi } from "../../api/plantApi";
-import { updateDeviceSpeciesApi } from "../../api/deviceApi";
+import { createPlantApi, deletePlantApi } from "../../api/plantApi";
+import { updatePortStatusApi } from "../../api/deviceApi";
+import { checkSharedEnvironment } from "../../utils/sharedEnvironment";
 
 const CATEGORY_FILTERS = ["전체", "채소", "허브", "과일", "관상식물"];
 
@@ -42,7 +43,7 @@ const DIFFICULTY_COLOR = {
     HARD:   "bg-red-100 text-red-600",
 };
 
-function SelectPlantModal({ serialNumber, portIndex, onClose, onSuccess }) {
+function SelectPlantModal({ serialNumber, portIndex, existingPlants = [], onClose, onSuccess }) {
     const [species, setSpecies]         = useState([]);
     const [selected, setSelected]       = useState(null);
     const [search, setSearch]           = useState("");
@@ -51,9 +52,6 @@ function SelectPlantModal({ serialNumber, portIndex, onClose, onSuccess }) {
     const [loading, setLoading]         = useState(false);
     const [fetchLoading, setFetchLoading] = useState(true);
     const [error, setError]             = useState("");
-
-    // portIndex가 null/undefined → 기기 품종 선택 전용 모드
-    const isSpeciesOnlyMode = portIndex === null || portIndex === undefined;
 
     useEffect(() => {
         getAllSpeciesApi()
@@ -64,7 +62,8 @@ function SelectPlantModal({ serialNumber, portIndex, onClose, onSuccess }) {
 
     const handleSelect = (sp) => {
         setSelected(sp);
-        setPlantName(sp.name || sp.koreanName || "");
+        const previous = existingPlants.find(plant => plant.speciesId === sp.id);
+        setPlantName(previous?.name || sp.name || sp.koreanName || "");
         setError("");
     };
 
@@ -76,7 +75,9 @@ function SelectPlantModal({ serialNumber, portIndex, onClose, onSuccess }) {
 
     const handleSubmit = async () => {
         if (!selected) return;
-        if (!isSpeciesOnlyMode && !plantName.trim()) {
+        const compatibility = checkSharedEnvironment(selected, existingPlants, species);
+        if (!compatibility.compatible) { setError(compatibility.reason); return; }
+        if (!plantName.trim()) {
             setError("식물 이름을 입력해주세요.");
             return;
         }
@@ -85,16 +86,9 @@ function SelectPlantModal({ serialNumber, portIndex, onClose, onSuccess }) {
         setError("");
 
         try {
-            if (isSpeciesOnlyMode) {
-                // ✅ 품종 선택 모드: DB에 기기 대표 품종 저장 후 콜백
-                await updateDeviceSpeciesApi(serialNumber, selected.id);
-                onSuccess(selected.id, selected.name || selected.koreanName);
-                onClose();
-            } else {
-                // 포트 등록 모드: 기존대로 식물 생성
-                await createPlantApi({
+            const created = await createPlantApi({
                     name:        plantName.trim(),
-                    stageIndex:  0, // ✅ plantStage: "SEED" -> stageIndex: 0 (첫 단계)으로 교체
+                    stageIndex:  0,
                     plantedAt:   new Date().toISOString(),
                     germinatedAt: null,
                     maturedAt:   null,
@@ -102,9 +96,17 @@ function SelectPlantModal({ serialNumber, portIndex, onClose, onSuccess }) {
                     serialNumber,
                     portIndex,
                 });
-                onSuccess();
+                try {
+                    await updatePortStatusApi(serialNumber, portIndex, true);
+                } catch (portError) {
+                    // 포트 활성화에 실패하면 식물 등록도 되돌려 빈 포트로 유지한다.
+                    try { await deletePlantApi(created.data.id); } catch (rollbackError) {
+                        console.error("[Plant rollback]", rollbackError);
+                    }
+                    throw portError;
+                }
+                await onSuccess();
                 onClose();
-            }
         } catch (err) {
             setError(
                 err.response?.data?.message ||
@@ -124,13 +126,11 @@ function SelectPlantModal({ serialNumber, portIndex, onClose, onSuccess }) {
             >
                 {/* 헤더 */}
                 <div className="flex-shrink-0 flex items-center gap-3 px-5 py-4 border-b border-gray-100">
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg leading-none">←</button>
-                    <h2 className="text-base font-bold text-gray-800">식물 선택</h2>
-                    {isSpeciesOnlyMode && (
-                        <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                            이 기기의 재배 품종을 선택하세요
-                        </span>
-                    )}
+                    <button onClick={onClose} className="text-gray-500 hover:text-gray-600 text-sub1 ">←</button>
+                    <h2 className="text-body1 font-bold text-gray-800">식물 선택</h2>
+                    <span className="text-caption text-brand bg-brand-cream px-2 py-1 rounded-full">
+                        {"P" + (portIndex + 1) + "에 심을 품종"}
+                    </span>
                     <div className="ml-auto flex items-center gap-2">
                         <span className="text-sm font-semibold text-green-600">🌱 GrowLab</span>
                     </div>
@@ -192,14 +192,19 @@ function SelectPlantModal({ serialNumber, portIndex, onClose, onSuccess }) {
                                         const emoji      = SPECIES_EMOJI[sp.name || sp.koreanName] || "🌱";
                                         const isSelected = selected?.id === sp.id;
                                         const diffKey    = sp.difficulty || "NORMAL";
+                                        const compatibility = checkSharedEnvironment(sp, existingPlants, species);
                                         return (
                                             <button
                                                 key={sp.id}
                                                 onClick={() => handleSelect(sp)}
+                                                disabled={!compatibility.compatible}
+                                                title={compatibility.reason || ""}
                                                 className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 text-center transition-all ${
-                                                    isSelected
-                                                        ? "border-green-500 bg-green-50"
-                                                        : "border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50"
+                                                    !compatibility.compatible
+                                                        ? "border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed"
+                                                        : isSelected
+                                                            ? "border-brand bg-brand-cream"
+                                                            : "border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50"
                                                 }`}
                                             >
                                                 {isSelected && (
@@ -213,6 +218,7 @@ function SelectPlantModal({ serialNumber, portIndex, onClose, onSuccess }) {
                                                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${DIFFICULTY_COLOR[diffKey] || DIFFICULTY_COLOR.NORMAL}`}>
                                                     {DIFFICULTY_LABEL[diffKey] || "보통"}
                                                 </span>
+                                                {!compatibility.compatible && <div className="text-caption text-red-600">{compatibility.reason}</div>}
                                                 {sp.growthDays && (
                                                     <div className="text-xs text-gray-400">⏱ {sp.growthDays}일</div>
                                                 )}
@@ -286,21 +292,19 @@ function SelectPlantModal({ serialNumber, portIndex, onClose, onSuccess }) {
                                     )}
                                 </div>
 
-                                {/* 포트 등록 모드일 때만 이름 입력 */}
-                                {!isSpeciesOnlyMode && (
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1">내 식물 이름</label>
+                                <div>
+                                        <label className="block text-caption font-medium text-gray-600 mb-1">내 식물 이름</label>
                                         <input
                                             type="text"
                                             value={plantName}
+                                            disabled={existingPlants.some(plant => plant.speciesId === selected.id)}
                                             onChange={e => setPlantName(e.target.value)}
                                             placeholder="예: 우리집 딸기"
                                             maxLength={20}
                                             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
                                         />
-                                        <p className="text-xs text-gray-400 mt-1">최대 20자</p>
-                                    </div>
-                                )}
+                                        <p className="text-caption text-gray-500 mt-1">{existingPlants.some(plant => plant.speciesId === selected.id) ? "같은 기기의 동일 품종 별명이 자동으로 적용됩니다." : "최대 20자 · 같은 품종을 추가하면 이 이름을 사용해요."}</p>
+                                </div>
 
                                 {error && (
                                     <div className="bg-red-50 text-red-500 text-xs rounded-lg px-3 py-2">{error}</div>
@@ -311,11 +315,7 @@ function SelectPlantModal({ serialNumber, portIndex, onClose, onSuccess }) {
                                     disabled={loading}
                                     className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white font-medium py-3 rounded-xl text-sm transition-colors"
                                 >
-                                    {loading
-                                        ? "처리 중..."
-                                        : isSpeciesOnlyMode
-                                            ? "이 품종으로 설정!"
-                                            : "이 식물로 재배 시작!"}
+                                    {loading ? "처리 중..." : "이 식물로 재배 시작!"}
                                 </button>
                             </div>
                         )}
