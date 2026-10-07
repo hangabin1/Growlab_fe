@@ -28,7 +28,7 @@ function FindIdPage() {
     };
 
     const handleSendCode = async () => {
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+        if (!email.trim()) {
             setError("이메일을 입력해주세요.");
             return;
         }
@@ -143,7 +143,7 @@ function FindIdPage() {
                                 <button
                                     type="button"
                                     onClick={handleSendCode}
-                                    disabled={sendLoading || emailVerified || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())}
+                                    disabled={sendLoading || emailVerified || !email.trim()}
                                     className="flex-shrink-0 px-4 py-2.5 text-xs font-medium rounded-lg border border-green-200 text-green-600 hover:bg-green-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors whitespace-nowrap"
                                 >
                                     {emailVerified

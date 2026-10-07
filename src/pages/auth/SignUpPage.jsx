@@ -32,7 +32,7 @@ function SignUpPage() {
     };
 
     const handleSendCode = async () => {
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+        if (!form.email.trim()) {
             setEmailError("이메일을 먼저 입력해주세요.");
             return;
         }
@@ -153,7 +153,7 @@ function SignUpPage() {
                             <button
                                 type="button"
                                 onClick={handleSendCode}
-                                disabled={sendLoading || emailVerified || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())}
+                                disabled={sendLoading || emailVerified || !form.email.trim()}
                                 className="flex-shrink-0 px-4 py-2.5 text-xs font-medium rounded-lg border border-green-200 text-green-600 hover:bg-green-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors whitespace-nowrap"
                             >
                                 {emailVerified

@@ -83,11 +83,11 @@ function AddDeviceModal({ onClose, onSuccess }) {
                                     value={form.serial}
                                     onChange={e => setForm({ ...form, serial: e.target.value.toUpperCase() })}
                                     placeholder="예: A001"
-                                    maxLength={40}
+                                    maxLength={5}
                                     className="flex-1 px-3 py-2.5 text-sm focus:outline-none"
                                 />
                             </div>
-                            <p className="text-xs text-gray-400 mt-1">기기 패키지에 적힌 GROWLAB- 뒤의 번호를 입력하세요</p>
+                            <p className="text-xs text-gray-400 mt-1">기기 패키지 스티커 또는 박스에서 확인 (영문 1자리 + 숫자 3자리)</p>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">기기 이름 <span className="text-red-400">*</span></label>
