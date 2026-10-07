@@ -13,7 +13,7 @@ function DiaryPage() {
     const [editingDiary, setEditingDiary] = useState(null);
     const [selectedDiary, setSelectedDiary] = useState(null);
     const [showList, setShowList] = useState(true);
-    const [form, setForm] = useState({ title: "", content: "", targetDate: "", portIndex: 0 });
+    const [form, setForm] = useState({ title: "", content: "", targetDate: "", plantId: null });
     const [imageFiles, setImageFiles] = useState([]);
     const [imagePreviews, setImagePreviews] = useState([]);
     const [error, setError] = useState("");
@@ -67,6 +67,10 @@ function DiaryPage() {
             setError("모든 항목을 입력해주세요.");
             return;
         }
+        if (!editingDiary && !form.plantId) {
+            setError("재배 중인 식물을 선택해주세요.");
+            return;
+        }
         setError("");
         try {
             const formData = new FormData();
@@ -81,7 +85,7 @@ function DiaryPage() {
             }
             setShowForm(false);
             setEditingDiary(null);
-            setForm({ title: "", content: "", targetDate: "", portIndex: 0 });
+            setForm({ title: "", content: "", targetDate: "", plantId: null });
             clearImages();
             fetchDiaries(selectedDevice);
         } catch {
@@ -95,7 +99,7 @@ function DiaryPage() {
             title: diary.title,
             content: diary.content,
             targetDate: diary.targetDate?.slice(0, 10) || "",
-            portIndex: diary.portIndex,
+            plantId: diary.plantId,
         });
         setImageFiles([]);
         setImagePreviews(diary.imageUrls?.map(url => `http://localhost:8080${url}`) || []);
@@ -116,7 +120,7 @@ function DiaryPage() {
 
     const openForm = () => {
         setEditingDiary(null);
-        setForm({ title: "", content: "", targetDate: "", portIndex: selectedDevice?.plants?.[0]?.portIndex ?? 0 });
+        setForm({ title: "", content: "", targetDate: "", plantId: selectedDevice?.plants?.[0]?.id ?? null });
         clearImages();
         setSelectedDiary(null);
         setShowForm(true);
@@ -144,7 +148,8 @@ function DiaryPage() {
                 {selectedDevice && (
                     <button
                         onClick={openForm}
-                        className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                        disabled={!selectedDevice.plants?.length}
+                        className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
                     >+ 새 일지</button>
                 )}
             </div>
@@ -215,7 +220,7 @@ function DiaryPage() {
                                             ${selectedDiary?.id === diary.id ? "bg-green-50 border-l-2 border-l-green-500" : ""}`}
                                     >
                                         <p className="text-body2 font-medium text-gray-800 truncate">{diary.title}</p>
-                                        <p className="text-caption text-gray-500 mt-1">{diary.targetDate?.slice(0, 10)} · P{diary.portIndex + 1} {diary.speciesName || "빈 포트"}</p>
+                                        <p className="text-caption text-gray-500 mt-1">{diary.targetDate?.slice(0, 10)} · P{diary.portIndex + 1} {diary.speciesName || "과거 기록"}{diary.plantEndReason === "HARVESTED" ? " · 수확" : diary.plantEndReason === "DIED" ? " · 병·시듦" : ""}</p>
                                     </button>
                                 ))}
                             </div>
@@ -235,15 +240,15 @@ function DiaryPage() {
                                 <h2 className="text-base font-bold text-gray-800">{editingDiary ? "일지 수정" : "새 일지 작성"}</h2>
                                 {error && <div className="bg-red-50 text-red-500 text-sm rounded-lg px-4 py-2">{error}</div>}
                                 <div>
-                                    <label className="block text-body2 font-medium text-gray-700 mb-1">기록할 포트</label>
-                                    <select value={form.portIndex} disabled={Boolean(editingDiary)} onChange={e => setForm({ ...form, portIndex: Number(e.target.value) })}
+                                    <label className="block text-body2 font-medium text-gray-700 mb-1">기록할 식물</label>
+                                    <select value={form.plantId ?? ""} disabled={Boolean(editingDiary)} onChange={e => setForm({ ...form, plantId: Number(e.target.value) })}
                                         className="w-full border border-gray-200 rounded-lg px-4 py-3 text-body2 focus:outline-none focus:ring-2 focus:ring-brand-leaf">
-                                        {Array.from({ length: 8 }, (_, portIndex) => {
-                                            const plant = selectedDevice.plants?.find(item => item.portIndex === portIndex);
-                                            return <option key={portIndex} value={portIndex}>P{portIndex + 1} · {plant ? `${plant.species || plant.speciesName} (${plant.name})` : "빈 포트"}</option>;
-                                        })}
+                                        {editingDiary && <option value={form.plantId ?? ""}>P{editingDiary.portIndex + 1} · {editingDiary.speciesName || "과거 기록"} ({editingDiary.plantName || "이름 없음"})</option>}
+                                        {!editingDiary && selectedDevice.plants?.map(plant =>
+                                            <option key={plant.id} value={plant.id}>P{plant.portIndex + 1} · {plant.species || plant.speciesName} ({plant.name})</option>
+                                        )}
                                     </select>
-                                    {editingDiary && <p className="text-caption text-gray-500 mt-1">기존 일지의 포트는 변경할 수 없어요.</p>}
+                                    {editingDiary && <p className="text-caption text-gray-500 mt-1">기존 일지의 식물은 변경할 수 없어요.</p>}
                                 </div>
                                 <div>
                                     <label className="block text-body2 font-medium text-gray-700 mb-1">날짜</label>
@@ -320,7 +325,7 @@ function DiaryPage() {
 
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <p className="text-caption text-gray-500 mb-1">{selectedDiary.targetDate?.slice(0, 10)} · P{selectedDiary.portIndex + 1} {selectedDiary.speciesName || "빈 포트"}{selectedDiary.plantName ? ` · ${selectedDiary.plantName}` : ""}</p>
+                                        <p className="text-caption text-gray-500 mb-1">{selectedDiary.targetDate?.slice(0, 10)} · P{selectedDiary.portIndex + 1} {selectedDiary.speciesName || "과거 기록"}{selectedDiary.plantName ? ` · ${selectedDiary.plantName}` : ""}{selectedDiary.plantEndReason === "HARVESTED" ? " · 수확 완료" : selectedDiary.plantEndReason === "DIED" ? " · 병·시듦으로 종료" : ""}</p>
                                         <h2 className="text-sub1 font-bold text-gray-800">{selectedDiary.title}</h2>
                                     </div>
                                     <div className="flex gap-2">

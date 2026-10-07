@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUnreadCountApi } from "../../api/noticeApi";
 import { getUserDevicesApi, deleteDeviceApi, updatePortStatusApi } from "../../api/deviceApi";
-import { deletePlantApi } from "../../api/plantApi";
+import { finishPlantApi } from "../../api/plantApi";
 import AddDeviceModal from "../../components/device/AddDeviceModal";
 import SelectPlantModal from "../../components/device/SelectPlantModal";
 import { startMonitoringPerformanceRun } from "../../utils/monitoringPerformance";
@@ -176,6 +176,8 @@ function HomePage() {
     const [showAddModal, setShowAddModal] = useState(false);
     const [sortKey, setSortKey]       = useState("name");
     const [selectingPlant, setSelectingPlant] = useState(null);
+    const [endingPlant, setEndingPlant] = useState(null);
+    const [endingLoading, setEndingLoading] = useState(false);
 
     const navigate = useNavigate();
 
@@ -237,14 +239,8 @@ function HomePage() {
         if (isOccupied) {
             const portPlant = device.plants?.find(p => p.portIndex === portIndex);
             if (portPlant) {
-                if (!window.confirm(`P${portIndex + 1} 포트를 OFF하면 식물이 삭제됩니다. 계속할까요?`)) return;
-                try {
-                    await deletePlantApi(portPlant.id);
-                } catch (err) {
-                    console.error(err);
-                    alert("식물 삭제에 실패했습니다.");
-                    return;
-                }
+                setEndingPlant({ plant: portPlant, portIndex });
+                return;
             }
             try {
                 await updatePortStatusApi(device.serialNumber, portIndex, false);
@@ -255,6 +251,21 @@ function HomePage() {
             }
         } else {
             setSelectingPlant({ serialNumber: device.serialNumber, portIndex });
+        }
+    };
+
+    const handleFinishPlant = async (reason) => {
+        if (!endingPlant || endingLoading) return;
+        setEndingLoading(true);
+        try {
+            await finishPlantApi(endingPlant.plant.id, reason);
+            setEndingPlant(null);
+            await fetchDevices();
+        } catch (err) {
+            console.error(err);
+            alert(err.response?.data?.message || err.response?.data || "재배 종료에 실패했습니다.");
+        } finally {
+            setEndingLoading(false);
         }
     };
 
@@ -383,6 +394,22 @@ function HomePage() {
                     onClose={() => setSelectingPlant(null)}
                     onSuccess={fetchDevices}
                 />
+            )}
+            {endingPlant && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+                        <h2 className="text-base font-bold text-gray-800">P{endingPlant.portIndex + 1} 재배 종료</h2>
+                        <p className="mt-2 text-sm text-gray-600">{endingPlant.plant.name} 재배를 어떻게 마쳤나요? 기록과 일지는 보존됩니다.</p>
+                        <div className="mt-5 flex flex-col gap-2">
+                            <button disabled={endingLoading} onClick={() => handleFinishPlant("HARVESTED")}
+                                className="rounded-lg bg-green-600 px-4 py-3 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50">수확했어요</button>
+                            <button disabled={endingLoading} onClick={() => handleFinishPlant("DIED")}
+                                className="rounded-lg border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">병들거나 시들어 죽었어요</button>
+                            <button disabled={endingLoading} onClick={() => setEndingPlant(null)}
+                                className="px-4 py-2 text-sm text-gray-500 disabled:opacity-50">취소</button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
