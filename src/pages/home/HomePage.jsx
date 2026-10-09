@@ -70,14 +70,14 @@ function DeviceCard({ device, onDelete, onPortClick, onOpenMonitoring }) {
         >
             <button
                 onClick={(e) => { e.stopPropagation(); onDelete(device.serialNumber); }}
-                className="absolute top-3 right-3 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs hover:bg-red-600 transition-colors z-10"
+                className="absolute top-3 right-3 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-caption hover:bg-red-600 transition-colors z-10"
             >✕</button>
 
             <div className="flex items-center gap-3 mb-4">
-                <span className="text-3xl">{emoji}</span>
+                <span className="text-h2">{emoji}</span>
                 <div>
-                    <div className="font-semibold text-gray-800 text-sm">{device.deviceNickname}</div>
-                    <div className="text-xs text-gray-400">{device.serialNumber}</div>
+                    <div className="font-bold text-gray-800 text-body2">{device.deviceNickname}</div>
+                    <div className="text-caption text-gray-500">{device.serialNumber}</div>
 
                     <div className="mt-1 text-caption text-gray-600">
                         {plants.length > 0
@@ -146,20 +146,20 @@ function DeviceCard({ device, onDelete, onPortClick, onOpenMonitoring }) {
                         {
                             label: "수위",
                             value: waterOk === null ? "-" : waterOk ? "정상" : "부족",
-                            color: waterOk === null ? "text-gray-300" : waterOk ? "text-blue-500" : "text-red-400",
-                            bg:    waterOk === null ? "bg-gray-50"    : waterOk ? "bg-blue-50"   : "bg-red-50",
+                            color: waterOk === null ? "text-gray-500" : waterOk ? "text-brand" : "text-red-600",
+                            bg:    waterOk === null ? "bg-gray-50"    : waterOk ? "bg-brand-cream"   : "bg-red-50",
                         },
                         {
                             label: "LED",
                             value: device.ledStatus ? "ON" : "OFF",
-                            color: device.ledStatus ? "text-yellow-500" : "text-gray-400",
+                            color: device.ledStatus ? "text-amber-700" : "text-gray-500",
                             bg:    "bg-gray-50",
                         },
                     ];
                 })().map(({ label, value, color, bg }) => (
                     <div key={label} className={`${bg} rounded-lg py-2`}>
-                        <div className="text-xs text-gray-400">{label}</div>
-                        <div className={`text-sm font-semibold ${color}`}>{value}</div>
+                        <div className="text-caption text-gray-500">{label}</div>
+                        <div className={`text-body2 font-bold ${color}`}>{value}</div>
                     </div>
                 ))}
             </div>
@@ -283,10 +283,10 @@ function HomePage() {
     const avgHumidity = getAverage(devices, "humidity");
 
     const summaryItems = [
-        { icon: "🌡", label: "평균 온도",   value: avgTemp     === "-" ? "-" : `${avgTemp}°C`,    color: "text-green-600" },
-        { icon: "💧", label: "평균 습도",   value: avgHumidity === "-" ? "-" : `${avgHumidity}%`, color: "text-green-600" },
-        { icon: "⚡", label: "활성 기기",   value: `${devices.length}대`,                         color: "text-green-600" },
-        { icon: "🔔", label: "미확인 알림", value: `${unreadCount}건`,                            color: "text-green-600", onClick: () => navigate("/notifications") },
+        { icon: "🌡", label: "평균 온도",   value: avgTemp     === "-" ? "-" : `${avgTemp}°C`,    color: "text-brand" },
+        { icon: "💧", label: "평균 습도",   value: avgHumidity === "-" ? "-" : `${avgHumidity}%`, color: "text-brand" },
+        { icon: "⚡", label: "활성 기기",   value: `${devices.length}대`,                         color: "text-brand" },
+        { icon: "🔔", label: "미확인 알림", value: `${unreadCount}건`,                            color: "text-brand", onClick: () => navigate("/notifications") },
     ];
 
     const sortedDevices = getSortedDevices();
@@ -295,29 +295,29 @@ function HomePage() {
         <div className="flex flex-col lg:flex-row gap-6">
             <div className="w-full lg:w-64 lg:flex-shrink-0 flex flex-col gap-4">
                 <div className="bg-white rounded-xl border border-gray-200 p-4">
-                    <div className="text-sm font-semibold text-gray-700 mb-3">바로가기</div>
+                    <div className="text-body2 font-bold text-gray-700 mb-3">바로가기</div>
                     <div className="grid grid-cols-2 gap-2">
                         <button onClick={() => navigate("/diary")}
-                            className="flex flex-col items-center gap-1 p-3 rounded-lg bg-green-50 hover:bg-green-100 transition-colors">
-                            <span className="text-xl">📔</span>
-                            <span className="text-xs text-gray-600">다이어리</span>
+                            className="flex flex-col items-center gap-1 p-3 rounded-lg bg-brand-cream hover:bg-brand-cream transition-colors">
+                            <span className="text-sub1">📔</span>
+                            <span className="text-caption text-gray-600">다이어리</span>
                         </button>
                         <button onClick={() => navigate("/mypage")}
                             className="flex flex-col items-center gap-1 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                            <span className="text-xl">🤍</span>
-                            <span className="text-xs text-gray-600">마이페이지</span>
+                            <span className="text-sub1">🤍</span>
+                            <span className="text-caption text-gray-600">마이페이지</span>
                         </button>
                     </div>
                 </div>
 
                 <div className="bg-white rounded-xl border border-gray-200 p-4">
-                    <div className="text-sm font-semibold text-gray-700 mb-3">전체 환경 요약</div>
-                    <div className="flex flex-col gap-2 text-sm">
+                    <div className="text-body2 font-bold text-gray-700 mb-3">전체 환경 요약</div>
+                    <div className="flex flex-col gap-2 text-body2">
                         {summaryItems.map(({ icon, label, value, color, onClick }) => (
                             <div key={label} onClick={onClick}
                                 className={`flex justify-between items-center py-1 border-b border-gray-50 last:border-0 ${onClick ? "cursor-pointer hover:bg-gray-50 rounded px-1 -mx-1 transition-colors" : ""}`}>
                                 <span className="text-gray-500">{icon} {label}</span>
-                                <span className={`font-semibold ${color}`}>{value}</span>
+                                <span className={`font-bold ${color}`}>{value}</span>
                             </div>
                         ))}
                     </div>
@@ -327,14 +327,14 @@ function HomePage() {
             <div className="flex-grow min-w-0">
                 <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center gap-3">
-                        <h2 className="text-lg font-bold text-gray-800">My Farm</h2>
+                        <h2 className="text-sub1 font-bold text-gray-800">My Farm</h2>
                         <div className="flex gap-1">
                             {SORT_OPTIONS.map(({ key, label }) => (
                                 <button key={key} onClick={() => setSortKey(key)}
-                                    className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${
+                                    className={`text-caption px-3 py-2 rounded-lg font-medium transition-colors ${
                                         sortKey === key
-                                            ? "bg-green-600 text-white"
-                                            : "bg-white border border-gray-200 text-gray-500 hover:border-green-400 hover:text-green-600"
+                                            ? "bg-brand text-white"
+                                            : "bg-white border border-gray-200 text-gray-500 hover:border-brand-olive hover:text-brand"
                                     }`}>{label}</button>
                             ))}
                         </div>
@@ -345,22 +345,22 @@ function HomePage() {
                             if (!token) { navigate("/login"); return; }
                             setShowAddModal(true);
                         }}
-                        className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+                        className="bg-brand hover:bg-brand-deep text-white text-body2 font-medium px-4 py-2 rounded-lg transition-colors">
                         + 기기 추가
                     </button>
                 </div>
 
                 {sortedDevices.length === 0 ? (
                     <div className="bg-white rounded-xl border border-gray-200 p-10 text-center">
-                        <div className="text-4xl mb-3">🌱</div>
-                        <p className="text-gray-400 text-sm">등록된 기기가 없어요</p>
+                        <div className="text-h1 mb-3">🌱</div>
+                        <p className="text-gray-500 text-body2">등록된 기기가 없어요</p>
                         <button
                             onClick={() => {
                                 const token = localStorage.getItem("token");
                                 if (!token) { navigate("/login"); return; }
                                 setShowAddModal(true);
                             }}
-                            className="mt-4 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+                            className="mt-4 bg-brand hover:bg-brand-deep text-white text-body2 font-medium px-4 py-2 rounded-lg transition-colors">
                             + 기기 추가하기
                         </button>
                     </div>
@@ -395,18 +395,19 @@ function HomePage() {
                     onSuccess={fetchDevices}
                 />
             )}
+
             {endingPlant && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
                     <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-                        <h2 className="text-base font-bold text-gray-800">P{endingPlant.portIndex + 1} 재배 종료</h2>
-                        <p className="mt-2 text-sm text-gray-600">{endingPlant.plant.name} 재배를 어떻게 마쳤나요? 기록과 일지는 보존됩니다.</p>
+                        <h2 className="text-body1 font-bold text-gray-800">P{endingPlant.portIndex + 1} 재배 종료</h2>
+                        <p className="mt-2 text-body2 text-gray-600">{endingPlant.plant.name} 재배를 어떻게 마쳤나요? 기록과 일지는 보존됩니다.</p>
                         <div className="mt-5 flex flex-col gap-2">
                             <button disabled={endingLoading} onClick={() => handleFinishPlant("HARVESTED")}
-                                className="rounded-lg bg-green-600 px-4 py-3 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50">수확했어요</button>
+                                className="rounded-lg bg-brand px-4 py-3 text-body2 font-medium text-white hover:bg-brand-deep disabled:opacity-50">수확했어요</button>
                             <button disabled={endingLoading} onClick={() => handleFinishPlant("DIED")}
-                                className="rounded-lg border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">병들거나 시들어 죽었어요</button>
+                                className="rounded-lg border border-gray-200 px-4 py-3 text-body2 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">병들거나 시들어 죽었어요</button>
                             <button disabled={endingLoading} onClick={() => setEndingPlant(null)}
-                                className="px-4 py-2 text-sm text-gray-500 disabled:opacity-50">취소</button>
+                                className="px-4 py-2 text-body2 text-gray-500 disabled:opacity-50">취소</button>
                         </div>
                     </div>
                 </div>
