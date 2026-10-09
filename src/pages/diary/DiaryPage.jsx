@@ -138,18 +138,18 @@ function DiaryPage() {
     };
 
     return (
-        <div className="max-w-4xl mx-auto flex flex-col gap-4">
+        <div className="max-w-col-8 mx-auto flex flex-col gap-4">
             {/* 헤더 */}
             <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
-                    <button onClick={() => navigate("/")} className="text-gray-400 hover:text-gray-600 text-sm">← 홈</button>
-                    <h1 className="text-xl font-bold text-gray-800">📔 다이어리</h1>
+                    <button onClick={() => navigate("/")} className="text-gray-500 hover:text-gray-600 text-body2">← 홈</button>
+                    <h1 className="text-sub1 font-bold text-gray-800">📔 다이어리</h1>
                 </div>
                 {selectedDevice && (
                     <button
                         onClick={openForm}
                         disabled={!selectedDevice.plants?.length}
-                        className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+                        className="bg-brand hover:bg-brand-deep text-white text-body2 font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
                     >+ 새 일지</button>
                 )}
             </div>
@@ -204,12 +204,12 @@ function DiaryPage() {
                             <p className="text-caption text-gray-500 mt-1">
                                 {selectedDevice.serialNumber}
                             </p>
-                            <p className="text-xs text-gray-400 mt-0.5">총 {diaries.length}개</p>
+                            <p className="text-caption text-gray-500 mt-1">총 {diaries.length}개</p>
                         </div>
                         {loading ? (
-                            <div className="p-4 text-center text-gray-400 text-sm">불러오는 중...</div>
+                            <div className="p-4 text-center text-gray-500 text-body2">불러오는 중...</div>
                         ) : diaries.length === 0 ? (
-                            <div className="p-6 text-center text-gray-400 text-sm">작성된 일지가 없어요</div>
+                            <div className="p-6 text-center text-gray-500 text-body2">작성된 일지가 없어요</div>
                         ) : (
                             <div className="flex flex-col">
                                 {diaries.map(diary => (
@@ -217,7 +217,7 @@ function DiaryPage() {
                                         key={diary.id}
                                         onClick={() => handleDiarySelect(diary)}
                                         className={`text-left px-4 py-3 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors
-                                            ${selectedDiary?.id === diary.id ? "bg-green-50 border-l-2 border-l-green-500" : ""}`}
+                                            ${selectedDiary?.id === diary.id ? "bg-brand-cream border-l-2 border-l-brand" : ""}`}
                                     >
                                         <p className="text-body2 font-medium text-gray-800 truncate">{diary.title}</p>
                                         <p className="text-caption text-gray-500 mt-1">{diary.targetDate?.slice(0, 10)} · P{diary.portIndex + 1} {diary.speciesName || "과거 기록"}{diary.plantEndReason === "HARVESTED" ? " · 수확" : diary.plantEndReason === "DIED" ? " · 병·시듦" : ""}</p>
@@ -234,11 +234,11 @@ function DiaryPage() {
                                 <div className="flex items-center gap-2 sm:hidden">
                                     <button
                                         onClick={() => { setShowForm(false); setShowList(true); }}
-                                        className="text-gray-400 hover:text-gray-600 text-sm"
+                                        className="text-gray-500 hover:text-gray-600 text-body2"
                                     >← 목록</button>
                                 </div>
-                                <h2 className="text-base font-bold text-gray-800">{editingDiary ? "일지 수정" : "새 일지 작성"}</h2>
-                                {error && <div className="bg-red-50 text-red-500 text-sm rounded-lg px-4 py-2">{error}</div>}
+                                <h2 className="text-body1 font-bold text-gray-800">{editingDiary ? "일지 수정" : "새 일지 작성"}</h2>
+                                {error && <div className="bg-red-50 text-red-600 text-body2 rounded-lg px-4 py-2">{error}</div>}
                                 <div>
                                     <label className="block text-body2 font-medium text-gray-700 mb-1">기록할 식물</label>
                                     <select value={form.plantId ?? ""} disabled={Boolean(editingDiary)} onChange={e => setForm({ ...form, plantId: Number(e.target.value) })}
@@ -256,34 +256,34 @@ function DiaryPage() {
                                         type="date"
                                         value={form.targetDate}
                                         onChange={e => setForm({ ...form, targetDate: e.target.value })}
-                                        className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                                        className="w-full border border-gray-200 rounded-lg px-4 py-3 text-body2 focus:outline-none focus:ring-2 focus:ring-brand-leaf"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
+                                    <label className="block text-body2 font-medium text-gray-700 mb-1">제목</label>
                                     <input
                                         type="text"
                                         value={form.title}
                                         onChange={e => setForm({ ...form, title: e.target.value })}
                                         placeholder="일지 제목을 입력하세요"
-                                        className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                                        className="w-full border border-gray-200 rounded-lg px-4 py-3 text-body2 focus:outline-none focus:ring-2 focus:ring-brand-leaf"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">내용</label>
+                                    <label className="block text-body2 font-medium text-gray-700 mb-1">내용</label>
                                     <textarea
                                         value={form.content}
                                         onChange={e => setForm({ ...form, content: e.target.value })}
                                         placeholder="오늘의 식물 상태를 기록해보세요"
                                         rows={6}
-                                        className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none"
+                                        className="w-full border border-gray-200 rounded-lg px-4 py-3 text-body2 focus:outline-none focus:ring-2 focus:ring-brand-leaf resize-none"
                                     />
                                 </div>
 
                                 {/* 사진 첨부 */}
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        사진 첨부 {imagePreviews.length > 0 && <span className="text-gray-400 font-normal">({imagePreviews.length}장)</span>}
+                                    <label className="block text-body2 font-medium text-gray-700 mb-1">
+                                        사진 첨부 {imagePreviews.length > 0 && <span className="text-gray-500 font-normal">({imagePreviews.length}장)</span>}
                                     </label>
                                     {imagePreviews.length > 0 && (
                                         <div className="grid grid-cols-3 gap-2 mb-2">
@@ -292,26 +292,26 @@ function DiaryPage() {
                                                     <img src={src} alt={`미리보기 ${idx + 1}`}
                                                         className="w-full h-full object-cover rounded-lg border border-gray-200" />
                                                     <button onClick={() => removeImage(idx)}
-                                                        className="absolute top-1 right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs hover:bg-red-600">✕</button>
+                                                        className="absolute top-1 right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-caption hover:bg-red-600">✕</button>
                                                 </div>
                                             ))}
                                         </div>
                                     )}
-                                    <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:border-green-400 hover:bg-green-50 transition-colors">
-                                        <span className="text-xl mb-0.5">📷</span>
-                                        <span className="text-xs text-gray-400">클릭하여 사진 추가 (여러 장 가능)</span>
+                                    <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:border-brand-olive hover:bg-brand-cream transition-colors">
+                                        <span className="text-sub1 mb-1">📷</span>
+                                        <span className="text-caption text-gray-500">클릭하여 사진 추가 (여러 장 가능)</span>
                                         <input type="file" accept="image/*" multiple onChange={handleImageChange} className="hidden" />
                                     </label>
                                 </div>
 
                                 <div className="flex gap-2">
                                     <button onClick={handleSubmit}
-                                        className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors">
+                                        className="flex-1 bg-brand hover:bg-brand-deep text-white font-medium py-3 rounded-lg text-body2 transition-colors">
                                         {editingDiary ? "수정 완료" : "저장"}
                                     </button>
                                     <button
                                         onClick={() => { setShowForm(false); setEditingDiary(null); clearImages(); setShowList(true); }}
-                                        className="px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-500 hover:bg-gray-50">
+                                        className="px-4 py-3 border border-gray-200 rounded-lg text-body2 text-gray-500 hover:bg-gray-50">
                                         취소
                                     </button>
                                 </div>
@@ -320,7 +320,7 @@ function DiaryPage() {
                             <div className="flex flex-col gap-4">
                                 <button
                                     onClick={() => { setSelectedDiary(null); setShowList(true); }}
-                                    className="flex items-center gap-1 text-gray-400 hover:text-gray-600 text-sm sm:hidden w-fit"
+                                    className="flex items-center gap-1 text-gray-500 hover:text-gray-600 text-body2 sm:hidden w-fit"
                                 >← 목록</button>
 
                                 <div className="flex justify-between items-start">
@@ -330,9 +330,9 @@ function DiaryPage() {
                                     </div>
                                     <div className="flex gap-2">
                                         <button onClick={() => handleEdit(selectedDiary)}
-                                            className="text-xs text-green-600 hover:text-green-700 font-medium px-3 py-1.5 border border-green-200 rounded-lg hover:bg-green-50">수정</button>
+                                            className="text-caption text-brand hover:text-brand-deep font-medium px-3 py-2 border border-brand-olive/40 rounded-lg hover:bg-brand-cream">수정</button>
                                         <button onClick={() => handleDelete(selectedDiary)}
-                                            className="text-xs text-red-400 hover:text-red-500 px-3 py-1.5 border border-red-100 rounded-lg hover:bg-red-50">삭제</button>
+                                            className="text-caption text-red-600 hover:text-red-600 px-3 py-2 border border-red-100 rounded-lg hover:bg-red-50">삭제</button>
                                     </div>
                                 </div>
                                 <hr className="border-gray-100" />
@@ -344,12 +344,12 @@ function DiaryPage() {
                                         ))}
                                     </div>
                                 )}
-                                <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{selectedDiary.content}</p>
+                                <p className="text-body2 text-gray-700 whitespace-pre-wrap ">{selectedDiary.content}</p>
                             </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center h-full text-center py-20">
-                                <div className="text-4xl mb-3">📔</div>
-                                <p className="text-gray-400 text-sm">일지를 선택하거나 새 일지를 작성해보세요</p>
+                                <div className="text-h1 mb-3">📔</div>
+                                <p className="text-gray-500 text-body2">일지를 선택하거나 새 일지를 작성해보세요</p>
                             </div>
                         )}
                     </div>
