@@ -9,11 +9,11 @@ function AuthLayout({ children, wide = false, top = 200 }) {
     return (
         // 화면 자체를 스크롤 영역으로 두고 스크롤바 자리를 양쪽에 항상 확보
         // → 스크롤이 생기는 화면(로그인·회원가입)과 안 생기는 화면(찾기)의 좌우 위치가 같음
-        <div className="h-screen overflow-y-auto bg-gray-100 [scrollbar-gutter:stable_both-edges]">
+        <div className="h-(--screen-h) overflow-y-auto bg-gray-100 [scrollbar-gutter:stable_both-edges]">
             <div className="container-page min-h-full grid grid-cols-1 lg:grid-cols-[588fr_144fr_588fr_120fr]">
                 {/* 좌측 패널 (PC 전용): Figma처럼 항상 화면 높이로 고정 → 그라데이션 비율이 모든 화면에서 동일 */}
                 <aside
-                    className="hidden lg:block lg:col-start-1 lg:sticky lg:top-0 lg:h-screen bg-cover bg-center pt-20 px-11"
+                    className="hidden lg:block lg:col-start-1 lg:sticky lg:top-0 lg:h-(--screen-h) bg-cover bg-center pt-20 px-11"
                     style={{ backgroundImage: `url(${authBg})` }}
                 >
                     <Logo light />

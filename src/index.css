@@ -4,7 +4,7 @@
    GrowLab Design System
    - Grid: Desktop 1920 / 12col / margin 240 / gutter 24
            Mobile 390 / 4col / margin 20 / gutter 16  (4배수)
-   - Color: Gray 50~950, Brand, Main
+   - Color: Gray 50~950, Brand, Main, Status
    - Typography: Pretendard (Bold / Medium / Regular)
    ========================================================================== */
 
@@ -31,7 +31,14 @@
   --color-brand-bright: #72b875; /* Main Sub Color2 */
   --color-brand-leaf: #66a368;   /* Main Sub Color3 */
   --color-brand-olive: #879958;  /* Brand Sub Color1 */
-  --color-brand-cream: #efedde;  /* Brand Sub Color2 */
+  --color-brand-lime: #adc471;   /* Brand Sub Color2 (2026.10.05 추가) */
+  --color-brand-cream: #efedde;  /* Brand Sub Color3 */
+
+  /* Status Color (2026.10.05 추가) */
+  --color-success-bg: #ecfeed;   /* Success Bg Color */
+  --color-error-bg: #fef2f2;     /* Error Bg Color */
+  --color-error: #dd2326;        /* Error Text Color */
+  --color-error-sub: #f26d70;    /* Error Sub Text Color */
 
   /* 시스템 폭 (12col 기준 n칸 폭 = 98n + 24(n-1)) */
   --container-col-4: 464px;
@@ -127,6 +134,13 @@
   }
 }
 
+/* 화면 높이: 화면 비율 자동 맞춤(utils/appZoom.js)으로 축소된 만큼 보정한 100vh.
+   축소 중에는 100vh가 실제 화면보다 짧아지므로, 화면 높이를 채워야 하는 곳은 이 값을 쓴다 */
+:root {
+  --app-zoom: 1;
+  --screen-h: calc(100vh / var(--app-zoom));
+}
+
 @layer base {
   html {
     font-family: var(--font-sans);
@@ -135,5 +149,22 @@
   }
   body {
     @apply text-body1 bg-gray-50;
+  }
+}
+
+/* ── 스크롤 영역 (Figma 홈 카드 목록): 폭 20 영역 + 12 thumb ── */
+@utility scrollbar-growlab {
+  scrollbar-gutter: stable;
+  &::-webkit-scrollbar {
+    width: 20px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--color-gray-300);
+    border: 4px solid transparent;
+    border-radius: 9999px;
+    background-clip: content-box;
   }
 }
