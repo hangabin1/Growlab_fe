@@ -13,7 +13,7 @@ import {
 } from "../../utils/monitoringPerformance";
 import { resolveRanges, scoreSensor } from "../../utils/sensorRange";
 import { deviceSensorRanges, sharedSensorStatus } from "../../utils/sharedEnvironment";
-import { prepareGrowthTrend } from "../../utils/growthEvidence";
+import { prepareGrowthTrend, growthComparison, describeSizeChange, describeComparison, SAME_SIZE_BAND_PERCENT } from "../../utils/growthEvidence";
 
 const SPECIES_EMOJI = {
     "방울토마토": "🍅", "청상추": "🥬", "적상추": "🥬",
@@ -185,33 +185,26 @@ const calcVisionScore = (sensorData, ranges) => {
     };
 };
 
-// 기기 공통 센서 점수에 확인된 질병과 충분한 관측으로 계산한 성장 격차만 반영한다.
+// 기기 공통 센서 점수에 확인된 질병과, 같은 시기 다른 재배와 견준 성장 속도만 반영한다.
 // 사진에서 식물을 못 찾았더라도 센서 상태는 별도로 보여준다.
 const calcPortHealth = (base, plant, trend) => {
     if (!plant) return { portDataAvailable: false, reason: "no_plant" };
     if (base.grade === "-") return { portDataAvailable: false, reason: "no_sensor" };
     const diseased = isDiseased(plant.diseaseResult);
-    const gap = trend?.comparisonReady ? trend.gapPercent : null;
+    const { verdict, behind } = growthComparison(trend);
 
     let score = base.score;
     const issues = [...(base.issues || [])];
     if (diseased) { score -= 35; issues.unshift(`질병 의심(${plant.diseaseResult})`); }
-    if (gap != null) {
-        if (gap <= -15) {
-            // 격차가 클수록 더 감점 (−15%→15점, 상한 35점). 환경이 좋아도 성장 정체는 뚜렷이 반영.
-            const pen = Math.min(35, 15 + (Math.abs(gap) - 15) * 0.3);
-            score -= pen;
-            issues.unshift(`성장 정체 ${gap}%`);
-        }
-        else if (gap <= -5) { score -= 7; }
-        else if (gap >= 10) { score += 3; }
-    }
+    // 환경이 좋아도 같은 시기의 다른 재배보다 뚜렷이 느리면 점수에 반영한다.
+    if (behind) { score -= 15; issues.unshift("같은 시기의 다른 재배보다 느린 성장"); }
+    else if (verdict === "faster") { score += 3; }
     score = Math.max(0, Math.min(100, Math.round(score)));
 
     const grade = score >= 95 ? "S" : score >= 85 ? "A" : score >= 75 ? "B" : score >= 65 ? "C" : "D";
     let growthStatus = score >= 85 ? "정상" : score >= 65 ? "주의" : "위험";
-    if ((diseased || (gap != null && gap <= -15)) && growthStatus === "정상") growthStatus = "주의";
-    const diseaseRisk = diseased ? "높음" : (gap != null && gap <= -15) ? "보통" : base.diseaseRisk;
+    if ((diseased || behind) && growthStatus === "정상") growthStatus = "주의";
+    const diseaseRisk = diseased ? "높음" : behind ? "보통" : base.diseaseRisk;
 
     return { portDataAvailable: true, score, grade, growthStatus, diseaseRisk, issues };
 };
@@ -692,9 +685,9 @@ const portDotHealth = (plant) => {
 const resolvePortHealth = (plant, trend) => {
     if (!plant) return "empty";
     if (isDiseased(plant.diseaseResult)) return "bad";
-    if (!trend?.comparisonReady) return "pending";
-    if (trend.gapPercent <= -15) return "warn";
-    return "good";
+    const { verdict, behind } = growthComparison(trend);
+    if (!verdict) return "pending";
+    return behind ? "warn" : "good";
 };
 
 // 다음 단계 예상 — 차트 대신 텍스트로 제공
@@ -749,7 +742,7 @@ function NextStageReadout({ selectedPlant, prediction, stageNames, stageDuration
     );
 }
 
-// 성장 추이 SVG (이 포트 실선 + 또래 평균 점선). peer 값이 null이면 그 구간은 건너뛴다.
+// 성장 추이 SVG (이 포트의 크기 변화). peerPoints를 주면 점선으로 함께 그리지만, 크기는 포트끼리 견주지 않으므로 지금은 쓰지 않는다.
 function GrowthTrendSvg({ points, peerPoints, color }) {
     const vals = (points || []).map(p => p?.value).filter(v => v != null);
     if (!vals.length) {
@@ -785,64 +778,66 @@ function GrowthTrendSvg({ points, peerPoints, color }) {
     );
 }
 
-// 성장 추이 카드 (성장추이 SVG + 또래 순위/격차)
+// 성장 추이 카드 (이 포트 자신의 크기 변화)
 function GrowthTrendCard({ trend, loading, error, color }) {
     const points = trend?.points ?? [];
-    const peerPoints = trend?.peerPoints ?? [];
-    const rank = trend?.rank ?? null;
-    const portCount = trend?.portCount ?? null;
-    const gap = trend?.gapPercent ?? null;
-    const gapColor = gap == null ? "text-gray-500"
-        : gap >= 5 ? "text-brand" : gap <= -15 ? "text-red-600" : gap < 0 ? "text-amber-700" : "text-gray-500";
     return (
         <div className="rounded-xl bg-gray-50 p-4">
             <div className="flex items-center justify-between mb-1">
                 <span className="text-caption font-bold text-gray-500">성장 추이 <span className="text-caption font-normal text-gray-500">관측</span></span>
-                {rank != null && portCount ? <span className={`text-caption font-bold ${gapColor}`}>{portCount}중 {rank}위</span> : null}
             </div>
             {loading ? (
                 <div className="h-12 flex items-center text-caption text-gray-500">불러오는 중...</div>
             ) : error ? (
                 <div className="h-12 flex items-center text-caption text-red-600">관측 데이터를 불러오지 못했어요.</div>
             ) : (
-                <GrowthTrendSvg points={points} peerPoints={peerPoints} color={color} />
+                <GrowthTrendSvg points={points} color={color} />
             )}
             {!loading && !error && (
                 <>
                     <div className="flex items-center gap-3 mt-1 text-caption text-gray-500">
                         {points.length > 0 && <span className="flex items-center gap-1"><span className="w-3 h-1 rounded" style={{ background: color }} />이 포트</span>}
-                        {trend?.comparisonReady && <span className="flex items-center gap-1"><span className="w-3 border-t border-dashed border-gray-400" />또래 평균</span>}
-                        {gap != null && <span className={`ml-auto font-medium ${gapColor}`}>{gap > 0 ? "+" : ""}{gap}%</span>}
                     </div>
                     <p className="mt-2 text-caption text-gray-500">
                         {trend?.observationDays === 0 || !trend
                             ? "YOLO 크기 관측이 없습니다. 사진에서 자란 식물을 놓쳤을 수도 있어요."
                             : !trend.trendReady
                                 ? `관측 ${trend.observationDays}일 · 성장 추이는 서로 다른 날짜의 관측이 더 필요해요.`
-                                : !trend.comparisonReady
-                                    ? `관측 ${trend.observationDays}일 · 또래 비교는 3일 관측과 비교 가능한 4포트가 필요해요.`
-                                    : "YOLO 검출 박스 면적 기준의 참고 추이예요."}
+                                : trend.reference.ready
+                                    ? `성장 속도는 같은 품종 재배 기록 ${trend.reference.plantCount}개가 같은 시기에 보인 속도와 견줬어요.`
+                                    : `관측 ${trend.observationDays}일 · 속도 비교는 같은 시기의 같은 품종 재배 기록 3개가 필요해요.`}
                     </p>
+                    {trend?.viewChangedDay != null && (
+                        <p className="mt-1 text-caption text-gray-500">
+                            {trend.viewChangedDay}일차에 포트 위치가 바뀌어, 그 뒤에 찍힌 사진끼리만 견줘요.
+                        </p>
+                    )}
                 </>
             )}
         </div>
     );
 }
 
-// 현재 관측 요약 (크기/질병/순위/격차)
+
+const COMPARISON_COLOR = { faster: "text-brand", similar: "text-gray-700", slower: "text-amber-700" };
+
+// 현재 관측 요약 (크기/질병/이 포트의 과거 대비 크기/같은 시기 다른 재배와의 속도 비교)
 function PortObservation({ plant, trend, error }) {
     if (!plant) {
         return <div className="rounded-xl bg-gray-50 p-4 flex items-center justify-center text-caption text-gray-500">데이터 없음</div>;
     }
     const latest = trend?.latestRatio;
-    const rank = trend?.rank, portCount = trend?.portCount, gap = trend?.gapPercent;
+    const sizeChange = trend?.sizeChange;
+    const comparison = trend?.reference;
     const diseased = isDiseased(plant.diseaseResult);
     const items = [
         ["YOLO 검출 면적", error ? "조회 실패" : latest != null ? `화면의 ${(latest * 100).toFixed(1)}%` : "관측 없음", "text-gray-700"],
         ["질병 검출", diseased ? plant.diseaseResult : "판단 대기", diseased ? "text-red-600" : "text-gray-500"],
-        ["또래 순위", rank != null && portCount ? `${portCount}중 ${rank}위` : "비교 대기", "text-gray-700"],
-        ["성장 격차", gap != null ? `${gap > 0 ? "+" : ""}${gap}%` : "비교 대기",
-            gap == null ? "text-gray-500" : gap >= 5 ? "text-brand" : gap <= -15 ? "text-red-600" : gap < 0 ? "text-amber-700" : "text-gray-500"],
+        ["과거 대비 크기", describeSizeChange(sizeChange),
+            !sizeChange?.ready ? "text-gray-500"
+                : sizeChange.changePercent >= SAME_SIZE_BAND_PERCENT ? "text-brand" : "text-amber-700"],
+        ["같은 시기 대비 속도", describeComparison(comparison, trend?.growthRate),
+            comparison?.ready ? COMPARISON_COLOR[comparison.verdict] : "text-gray-500"],
     ];
     return (
         <div className="rounded-xl bg-gray-50 p-4 grid grid-cols-2 gap-2 content-start">
