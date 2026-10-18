@@ -25,13 +25,13 @@ export default function HarvestReadout({ plant, prediction }) {
                 </>
             ) : value.status === "PREDICTED" ? (
                 <>
-                    <p className="text-h2 font-bold text-gray-800">{date(value.expectedAt)}</p>
-                    <p className="text-body2 text-gray-600">{value.overdue ? "예상일이 지났어요. 다음 촬영으로 상태를 확인해 주세요." : value.days === 0 ? "오늘 수확기 도달 예상" : `약 ${value.days}일 후 수확기 도달 예상`}</p>
+                    <div className="flex items-baseline gap-3">
+                        <p className="shrink-0 text-h2 font-bold text-gray-800">{date(value.expectedAt)}</p>
+                        <span className="whitespace-nowrap text-body2 text-gray-600">{value.overdue ? "예상일 지남" : value.days === 0 ? "오늘" : `약 ${value.days}일 후`}</span>
+                    </div>
                     {value.stale && <p className="text-caption text-amber-700 mt-2">최근 촬영이 지연되어 이전 예측을 표시하고 있어요.</p>}
-                    <p className="text-caption text-gray-500 mt-2">사진 속 발육 상태와 성장 이력으로 계산한 예상일이에요. 실제 수확 여부는 식물 상태를 확인해 결정해 주세요.</p>
                 </>
             ) : <p className="text-body2 text-gray-600 py-2">{messages[value.status] || messages.WAITING_OBSERVATION}</p>}
-            {value.capturedAt && <p className="mt-2 text-caption text-gray-400">기준 촬영: {new Date(value.capturedAt).toLocaleString("ko-KR")}</p>}
         </section>
     );
 }
