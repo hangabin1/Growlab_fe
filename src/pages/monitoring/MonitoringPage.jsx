@@ -3,7 +3,9 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { getUserDevicesApi, updateLedApi, updatePhotoIntervalApi } from "../../api/deviceApi";
 import { getAllNoticesApi } from "../../api/noticeApi";
 import { getSseStreamUrl } from "../../api/sensorApi";
-import { getLatestPredictionApi } from "../../api/predictionApi";
+import { getLatestPredictionApi, getLatestHarvestPredictionApi } from "../../api/predictionApi";
+import HarvestReadout from "../../components/HarvestReadout";
+import { isLettucePlant } from "../../utils/harvestPrediction";
 import { getGrowthTrendApi } from "../../api/photoApi";
 import {
     finishMonitoringPerformanceRun,
@@ -695,6 +697,7 @@ function NextStageReadout({ selectedPlant, prediction, stageNames, stageDuration
     if (!selectedPlant) {
         return <EmptyTimeline>이 포트에 식물이 없어요</EmptyTimeline>;
     }
+    if (isLettucePlant(selectedPlant)) return <HarvestReadout plant={selectedPlant} prediction={prediction} />;
     const currentStageIdx = Number(selectedPlant.stageIndex ?? 0);
     const isLastStage = currentStageIdx >= stageNames.length - 1;
     const forecast = getNextStageForecast(
@@ -1142,19 +1145,22 @@ function MonitoringPage() {
             return;
         }
         setPredictionSettled(false);
-        measureMonitoringApi(perfRunId, "prediction", () => getLatestPredictionApi(plant.id))
+        const fetchPrediction = () => measureMonitoringApi(perfRunId, "prediction", () =>
+            isLettucePlant(plant) ? getLatestHarvestPredictionApi(plant.id) : getLatestPredictionApi(plant.id))
             .then(res => {
                 if (!cancelled) setPrediction(res.data ? { plantId: plant.id, ...res.data } : null);
             })
             .catch(() => {
-                if (!cancelled) setPrediction(null);
+                if (!cancelled) setPrediction({ plantId: plant.id, status: "LOAD_ERROR" });
             })
             .finally(() => {
                 if (cancelled) return;
                 setPredictionSettled(true);
                 markMonitoringPerformance(perfRunId, "prediction_settled", { hasPlant: true });
             });
-        return () => { cancelled = true; };
+        fetchPrediction();
+        const predictionTimer = setInterval(fetchPrediction, 60000);
+        return () => { cancelled = true; clearInterval(predictionTimer); };
     }, [device, selectedPort, perfRunId]);
 
     // ── 3. SSE 연결
@@ -1860,7 +1866,7 @@ function MonitoringPage() {
                         <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5 shadow-sm">
                             <div className="mb-4">
                                 <h2 className="text-body2 font-bold text-gray-700">📈 생육 상세</h2>
-                                <p className="mt-1 text-caption text-gray-500">단계 기록·다음 예상 시점 · 이 포트의 성장 추이와 문제 분석.</p>
+                                <p className="mt-1 text-caption text-gray-500">단계 기록·수확기 예상 · 이 포트의 성장 추이와 문제 분석.</p>
                             </div>
 
                             <NextStageReadout
