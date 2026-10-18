@@ -67,7 +67,7 @@ test("ports are compared by growth speed at the same age, not by size", () => {
     });
     // bigger than its peers, yet growing more slowly than they did at this age
     assert.deepEqual(growthComparison(slower), { verdict: "slower", behind: true });
-    assert.equal(describeComparison(slower.reference, slower.growthRate), "더 느림 (다른 재배 약 +15%)");
+    assert.equal(describeComparison(slower.reference), "더 느림");
 
     const similar = prepareGrowthTrend({
         points: [point(28)], latestRatio: 0.01,
@@ -79,7 +79,7 @@ test("ports are compared by growth speed at the same age, not by size", () => {
         growthRate: { ratePerDay: 10.6, status: "growing", observationDays: 5, spanDays: 4 },
         reference: { ready: true, ratePerDay: 9.6, plantCount: 3, verdict: "similar" },
     });
-    assert.equal(describeComparison(withOwnRate.reference, withOwnRate.growthRate), "비슷함 (하루 약 +11%, 다른 재배 약 +10%)");
+    assert.equal(describeComparison(withOwnRate.reference), "비슷함");
 });
 
 test("a size gap alone never marks a port as behind", () => {

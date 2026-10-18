@@ -60,12 +60,10 @@ export function growthComparison(trend) {
     return { verdict, behind: verdict === "slower" };
 }
 
-// 화면에 쓰는 속도 비교 문구. 하루 성장률은 소수점 없이 '약'으로 보여준다.
-export function describeComparison(reference, growthRate) {
+// 화면에는 같은 품종·경과일의 성장 속도 비교 결과만 간결하게 보여준다.
+export function describeComparison(reference) {
     if (!reference?.ready) return "비교 대기";
-    const percent = value => `${Math.round(value) > 0 ? "+" : ""}${Math.round(value)}%`;
-    const own = growthRate?.ready ? `하루 약 ${percent(growthRate.ratePerDay)}, ` : "";
-    return `${VERDICT_LABEL[reference.verdict]} (${own}다른 재배 약 ${percent(reference.ratePerDay)})`;
+    return VERDICT_LABEL[reference.verdict];
 }
 
 export function prepareGrowthTrend(trend) {
