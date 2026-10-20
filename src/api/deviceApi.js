@@ -1,6 +1,7 @@
 import axios from "axios";
+import { API_BASE as BASE_API_URL } from "./config";
 
-const API_BASE = "http://localhost:8080/api/devices";
+const API_BASE = `${BASE_API_URL}/devices`;
 
 const authHeader = () => ({
     headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
@@ -23,10 +24,6 @@ export const updateLedApi = (serialNumber, payload) =>
 
 export const updatePhotoIntervalApi = (serialNumber, photoInterval) =>
     axios.patch(`${API_BASE}/${serialNumber}/photo_interval`, { photoInterval }, authHeader());
-
-// ✅ 기기 대표 품종 설정/변경 - PATCH /api/devices/{serialNumber}/species
-export const updateDeviceSpeciesApi = (serialNumber, speciesId) =>
-    axios.patch(`${API_BASE}/${serialNumber}/species`, { speciesId }, authHeader());
 
 // ────────────────────────────────
 // ✅ 관리자 전용 API (ROLE_ADMIN 필요)

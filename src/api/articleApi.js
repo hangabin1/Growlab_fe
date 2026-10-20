@@ -1,6 +1,8 @@
 import axios from "axios";
+import { API_BASE as ROOT_API_BASE } from "./config";
+import { createArticleDetailRequest } from "./articleDetailRequest.js";
 
-const BASE_URL = "http://localhost:8080/api";
+const BASE_URL = ROOT_API_BASE;
 
 // 1. 인터셉터가 적용될 전용 인스턴스 생성
 const api = axios.create({
@@ -12,12 +14,8 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem("token");
     
-    if (token) {
+    if (token && !config.headers.has("Authorization")) {
         config.headers.Authorization = `Bearer ${token}`;
-        
-        console.log("인터셉터 작동 중! 전송될 헤더:", config.headers.Authorization);
-    } else {
-        console.warn("⚠️ 로컬 스토리지에 토큰이 없습니다!");
     }
     return config;
 }, (error) => {
@@ -30,9 +28,8 @@ api.interceptors.request.use((config) => {
 export const getArticlesApi = () => 
     api.get("/articles");
 
-// 상세 조회 
-export const getArticleDetailApi = (id) => 
-    api.get(`/articles/${id}`);
+// 같은 글이라도 계정이 다르면 별도 요청으로 조회한다.
+export const getArticleDetailApi = createArticleDetailRequest(api, () => localStorage.getItem("token"));
 
 // 게시글 생성 
 export const createArticleApi = (formData) =>

@@ -1,6 +1,7 @@
 import axios from "axios";
+import { API_BASE as ROOT_API_BASE } from "./config";
 
-const API_BASE = "http://localhost:8080/api/auth";
+const API_BASE = `${ROOT_API_BASE}/auth`;
 
 export const loginApi = (username, password) =>
     axios.post(`${API_BASE}/login`, { username, password });
