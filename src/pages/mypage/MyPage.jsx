@@ -9,7 +9,7 @@ const TABS = ["프로필", "내가 쓴 글", "내가 쓴 댓글"];
 function MyPage() {
     const navigate = useNavigate();
 
-    const [username, setUsername] = useState(localStorage.getItem("username"));
+    const username = localStorage.getItem("username");
     const isAdmin = localStorage.getItem("role") === "ROLE_ADMIN";
 
     const [activeTab, setActiveTab] = useState("프로필");

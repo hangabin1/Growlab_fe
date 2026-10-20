@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_ORIGIN } from '../../api/config';
 import { getArticlesApi } from '../../api/articleApi';
 
 const ArticleListPage = () => {
@@ -10,18 +11,18 @@ const ArticleListPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showSidebar, setShowSidebar] = useState(false); // ✅ 모바일 사이드바 토글
   const postsPerPage = 10;
-  const SERVER_URL = "http://localhost:8080";
+  const SERVER_URL = API_ORIGIN;
 
-  useEffect(() => { fetchPosts(); }, []);
-  useEffect(() => { setCurrentPage(1); }, [currentCategory]);
-
-  const fetchPosts = async () => {
+  useEffect(() => {
+    const fetchPosts = async () => {
     const token = localStorage.getItem("token");
     try {
       const response = await getArticlesApi(token);
       setPosts(response.data?.content ?? []);
     } catch (error) { console.error("데이터 로딩 실패:", error); }
-  };
+    };
+    fetchPosts();
+  }, []);
 
   const getFormattedImageUrl = (post) => {
     let rawUrl = post.imageUrl;
@@ -61,7 +62,7 @@ const ArticleListPage = () => {
         {['전체', '재배 노하우', '자유 게시판', '질문/답변'].map((cat) => (
           <button
             key={cat}
-            onClick={() => { setCurrentCategory(cat); setShowSidebar(false); }}
+            onClick={() => { setCurrentCategory(cat); setCurrentPage(1); setShowSidebar(false); }}
             className={`w-full flex justify-between items-center px-4 py-3 rounded-xl transition-all ${
               currentCategory === cat ? 'bg-brand-cream text-brand font-bold' : 'text-gray-500 hover:bg-gray-50'
             }`}
@@ -93,14 +94,14 @@ const ArticleListPage = () => {
                 <span className="font-bold text-gray-800">카테고리</span>
                 <button onClick={() => setShowSidebar(false)} className="text-gray-500 text-sub1">✕</button>
               </div>
-              <SidebarContent />
+              {SidebarContent()}
             </div>
           </div>
         )}
 
         {/* ✅ 데스크탑 사이드바 */}
         <aside className="hidden lg:block w-64 bg-white rounded-[2rem] p-8 shadow-sm h-fit border border-gray-100 sticky top-10">
-          <SidebarContent />
+          {SidebarContent()}
         </aside>
 
         {/* 메인 */}

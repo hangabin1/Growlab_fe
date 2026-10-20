@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getDiariesApi, createDiaryApi, updateDiaryApi, deleteDiaryApi } from "../../api/diaryApi";
 import { getUserDevicesApi } from "../../api/deviceApi";
+import { API_ORIGIN } from "../../api/config";
 
 function DiaryPage() {
     const navigate = useNavigate();
@@ -102,7 +103,7 @@ function DiaryPage() {
             plantId: diary.plantId,
         });
         setImageFiles([]);
-        setImagePreviews(diary.imageUrls?.map(url => `http://localhost:8080${url}`) || []);
+        setImagePreviews(diary.imageUrls?.map(url => `${API_ORIGIN}${url}`) || []);
         setSelectedDiary(null);
         setShowForm(true);
         setShowList(false);
@@ -339,7 +340,7 @@ function DiaryPage() {
                                 {selectedDiary.imageUrls?.length > 0 && (
                                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                         {selectedDiary.imageUrls.map((url, idx) => (
-                                            <img key={idx} src={`http://localhost:8080${url}`} alt={`일지 사진 ${idx + 1}`}
+                                            <img key={idx} src={`${API_ORIGIN}${url}`} alt={`일지 사진 ${idx + 1}`}
                                                 className="w-full aspect-square object-cover rounded-lg border border-gray-100" />
                                         ))}
                                     </div>

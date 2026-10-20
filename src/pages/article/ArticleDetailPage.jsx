@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { API_ORIGIN } from '../../api/config';
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
 import {
@@ -16,7 +17,7 @@ const ArticleDetailPage = () => {
   const navigate = useNavigate();
   const [post, setPost] = useState(null);
   const [comment, setComment] = useState("");
-  const SERVER_URL = "http://localhost:8080";
+  const SERVER_URL = API_ORIGIN;
 
   const [isOpen, setIsOpen] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -25,15 +26,20 @@ const ArticleDetailPage = () => {
 
   const currentUsername = localStorage.getItem("username");
 
-  useEffect(() => { fetchDetail(); }, [id]);
-
-  const fetchDetail = async () => {
+  const fetchDetail = useCallback(async () => {
     const token = localStorage.getItem("token");
     try {
       const response = await getArticleDetailApi(id, token);
       setPost(response.data);
     } catch (error) { console.error("데이터 가져오기 실패:", error); }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    getArticleDetailApi(id, token)
+      .then(response => setPost(response.data))
+      .catch(error => console.error("데이터 가져오기 실패:", error));
+  }, [id]);
 
   const getFormattedImageUrl = (url) => {
     if (!url) return null;

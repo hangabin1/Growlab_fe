@@ -1,6 +1,7 @@
 import axios from "axios";
+import { API_BASE as ROOT_API_BASE } from "./config";
 
-const API_BASE = "http://localhost:8080/api/devices";
+const API_BASE = `${ROOT_API_BASE}/devices`;
 const url = serialNumber => `${API_BASE}/${encodeURIComponent(serialNumber)}/diaries`;
 const authHeader = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
 

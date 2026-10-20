@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { API_ORIGIN } from '../../api/config';
 import { createArticleApi, getArticleDetailApi, updateArticleApi } from '../../api/articleApi';
 
 const ArticleCreatePage = () => {
@@ -15,11 +16,9 @@ const ArticleCreatePage = () => {
   const [existingImages, setExistingImages] = useState([]);
   const [deleteImageIds, setDeleteImageIds] = useState([]);
 
-  const SERVER_URL = "http://localhost:8080";
-
-  useEffect(() => { if (isEditMode) fetchPostDetail(); }, [id]);
-
-  const fetchPostDetail = async () => {
+  useEffect(() => {
+    if (!isEditMode) return;
+    const fetchPostDetail = async () => {
     try {
       const response = await getArticleDetailApi(id);
       const post = response.data;
@@ -31,7 +30,7 @@ const ArticleCreatePage = () => {
           let url = img.imgUrl || img.imageUrl || "";
           if (url && !url.startsWith('http')) {
             const correctedPath = url.replace('/api/files/', '/uploads/');
-            url = `${SERVER_URL}${correctedPath.startsWith('/') ? correctedPath : '/' + correctedPath}`;
+            url = `${API_ORIGIN}${correctedPath.startsWith('/') ? correctedPath : '/' + correctedPath}`;
           }
           return { id: img.id, url };
         });
@@ -42,7 +41,9 @@ const ArticleCreatePage = () => {
       console.error("데이터 로드 실패:", error);
       alert("글 데이터를 불러오지 못했습니다.");
     }
-  };
+    };
+    fetchPostDetail();
+  }, [id, isEditMode]);
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
