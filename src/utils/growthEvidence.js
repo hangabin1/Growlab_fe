@@ -73,6 +73,17 @@ export function describeComparison(reference) {
     return VERDICT_LABEL[reference.verdict];
 }
 
+export function currentSizeRatio(trend) {
+    if (trend?.measurement === "box_green" && Number.isFinite(trend.latestRatio)) {
+        return trend.latestRatio;
+    }
+    const box = trend?.latestBoxRatio;
+    const green = trend?.latestGreenRatio;
+    if (!Number.isFinite(box) || box <= 0 || box > 1
+        || !Number.isFinite(green) || green <= 0 || green > box + 0.01) return null;
+    return box ** 0.7 * green ** 0.3;
+}
+
 export function prepareGrowthTrend(trend) {
     if (!trend) return null;
 

@@ -1,8 +1,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { prepareGrowthTrend, growthComparison, describeSizeChange, describeComparison } from "./growthEvidence.js";
+import { prepareGrowthTrend, growthComparison, describeSizeChange, describeComparison, currentSizeRatio } from "./growthEvidence.js";
 
 const point = day => ({ date: `2026-09-${day}`, elapsedDay: day, value: 0.02 });
+
+test("current size uses the combined box and green result only", () => {
+    assert.equal(currentSizeRatio({ measurement: "box_green", latestRatio: 0.42 }), 0.42);
+    assert.ok(Math.abs(currentSizeRatio({ measurement: "box", latestRatio: 0.8,
+        latestBoxRatio: 0.8, latestGreenRatio: 0.2 }) - (0.8 ** 0.7 * 0.2 ** 0.3)) < 1e-12);
+    assert.equal(currentSizeRatio({ measurement: "box", latestRatio: 0.8,
+        latestBoxRatio: 0.8, latestGreenRatio: null }), null);
+});
 
 test("one day and two detected ports cannot create a growth gap", () => {
     const prepared = prepareGrowthTrend({
