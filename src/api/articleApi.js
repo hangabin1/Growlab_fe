@@ -27,9 +27,21 @@ api.interceptors.request.use((config) => {
 export const getArticlesApi = () => 
     api.get("/articles");
 
-// 상세 조회 
-export const getArticleDetailApi = (id) => 
-    api.get(`/articles/${id}`);
+// 같은 글의 동시 상세 요청은 하나의 조회로 처리한다.
+const pendingArticleDetails = new Map();
+export const getArticleDetailApi = (id) => {
+    const key = String(id);
+    const pending = pendingArticleDetails.get(key);
+    if (pending) return pending;
+
+    const request = api.get(`/articles/${id}`);
+    pendingArticleDetails.set(key, request);
+    const clear = () => {
+        if (pendingArticleDetails.get(key) === request) pendingArticleDetails.delete(key);
+    };
+    request.then(clear, clear);
+    return request;
+};
 
 // 게시글 생성 
 export const createArticleApi = (formData) =>
