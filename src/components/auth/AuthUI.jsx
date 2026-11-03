@@ -4,8 +4,6 @@ import { Link } from "react-router-dom";
 // 제목 PC/Display/Bold, 부제 PC/H3/Regular, 라벨·입력 PC/Subtitle1/Medium
 // size "lg": 로그인·찾기 화면(입력 68px) / "md": 회원가입 화면(입력 52px)
 
-export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 export function AuthHeading({ title, subtitle }) {
     return (
         <>
@@ -80,7 +78,7 @@ export function AuthActionButton({ size = "lg", done = false, children, ...props
         <button
             type="button"
             {...props}
-            className={`shrink-0 rounded font-medium whitespace-nowrap transition-colors ${box} ${color}`}
+            className={`shrink-0 rounded font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${box} ${color}`}
         >
             {children}
         </button>
@@ -93,7 +91,7 @@ export function AuthPrimaryButton({ size = "lg", children, className = "", ...pr
     return (
         <button
             {...props}
-            className={`w-full ${box} rounded bg-brand font-medium text-white transition-colors hover:bg-brand-deep disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed ${className}`}
+            className={`w-full ${box} rounded bg-brand font-medium text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed ${className}`}
         >
             {children}
         </button>

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import authBg from "../../assets/auth-bg.webp";
+import logoShape from "../../assets/logoShapeIcon.png";
 
 // 인증 화면 공통 틀 (Figma 기준 1920: 패널 240~828 / 폼 972~1560, 둘 다 588px)
 // 1440 콘텐츠를 588 | 144 | 588 | 120 비율로 나눔
@@ -37,12 +38,12 @@ function AuthLayout({ children, wide = false, top = 200 }) {
     );
 }
 
-// TODO: 로고 파일 전달되면 교체 (디자인상 40x40 심볼 + 192x40 워드마크)
 function Logo({ light = false }) {
     return (
-        <Link to="/" className="flex items-center gap-2 h-10">
-            <span className="w-10 h-10 flex items-center justify-center text-h4" aria-hidden="true">🌱</span>
-            <span className={`text-h3 font-bold ${light ? "text-white" : "text-brand"}`}>GrowLab</span>
+        <Link to="/" aria-label="GrowLab 홈" className={`inline-flex h-10 items-center gap-2 text-[40px] font-bold leading-none tracking-[-1px] ${light ? "text-white" : "text-brand"}`}>
+            <span aria-hidden="true" className="size-10 shrink-0 bg-current"
+                style={{ maskImage: `url(${logoShape})`, maskSize: "contain", maskRepeat: "no-repeat", maskPosition: "center" }} />
+            <span>growlab</span>
         </Link>
     );
 }

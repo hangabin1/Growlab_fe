@@ -4,6 +4,7 @@ import { signupApi, sendEmailCodeApi, verifyEmailCodeApi } from "../../api/authA
 import AuthLayout from "../../components/layouts/AuthLayout";
 import { AuthField, AuthInput, AuthInputRow, AuthActionButton, AuthPrimaryButton, StatusChip } from "../../components/auth/AuthUI";
 import iconBack from "../../assets/icon-back.svg";
+import { EMAIL_RE, VERIFICATION_CODE_RE, authErrorMessage } from "../../utils/authForm";
 
 function SignUpPage() {
     const navigate = useNavigate();
@@ -18,7 +19,6 @@ function SignUpPage() {
     const [sendLoading, setSendLoading] = useState(false);
     const [verifyLoading, setVerifyLoading] = useState(false);
     const [emailError, setEmailError] = useState("");
-    const [, setEmailMessage] = useState("");
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -30,55 +30,42 @@ function SignUpPage() {
             setCodeSent(false);
             setCode("");
             setEmailError("");
-            setEmailMessage("");
         }
     };
 
     const handleSendCode = async () => {
-        if (!form.email.trim()) {
-            setEmailError("이메일을 먼저 입력해주세요.");
+        if (!EMAIL_RE.test(form.email.trim())) {
+            setEmailError("올바른 이메일을 입력해주세요.");
             return;
         }
         setSendLoading(true);
         setEmailError("");
-        setEmailMessage("");
         try {
-            const res = await sendEmailCodeApi(form.email.trim());
-            setEmailMessage(res.data || "인증코드가 발송되었습니다. 메일함을 확인해주세요.");
+            await sendEmailCodeApi(form.email.trim());
             setCodeSent(true);
+            setCode("");
+            setEmailVerified(false);
         } catch (err) {
-            setEmailError(
-                err.response?.data ||
-                err.response?.data?.message ||
-                "인증코드 발송에 실패했습니다."
-            );
+            setEmailError(authErrorMessage(err, "인증코드 발송에 실패했습니다."));
         } finally {
             setSendLoading(false);
         }
     };
 
     const handleVerifyCode = async () => {
-        if (!code.trim()) {
-            setEmailError("인증코드를 입력해주세요.");
+        if (!VERIFICATION_CODE_RE.test(code)) {
+            setEmailError("6자리 인증코드를 입력해주세요.");
             return;
         }
         setVerifyLoading(true);
         setEmailError("");
-        setEmailMessage("");
         try {
-            const res = await verifyEmailCodeApi(form.email.trim(), code.trim());
-            setEmailMessage(res.data || "이메일 인증이 완료되었습니다.");
+            await verifyEmailCodeApi(form.email.trim(), code);
             setEmailVerified(true);
         } catch (err) {
-            const msg =
-                err.response?.data ||
-                err.response?.data?.message ||
-                "인증코드 확인에 실패했습니다.";
+            const msg = authErrorMessage(err, "인증코드 확인에 실패했습니다.");
             setEmailError(msg);
-            // ✅ 시도 횟수 초과 메시지면 입력창을 비우고 재발송을 유도
-            if (msg.includes("초과") || msg.includes("다시 받아주세요")) {
-                setCode("");
-            }
+            setCode("");
         } finally {
             setVerifyLoading(false);
         }
@@ -97,20 +84,27 @@ function SignUpPage() {
             setError("비밀번호가 일치하지 않습니다.");
             return;
         }
+        if (form.username.length < 4 || form.username.length > 20 || form.password.length < 8 || form.password.length > 20) {
+            setError("아이디는 4~20자, 비밀번호는 8~20자로 입력해주세요.");
+            return;
+        }
 
         setLoading(true);
         try {
             await signupApi(form.username, form.email, form.password);
             navigate("/login");
         } catch (err) {
-            setError(err.response?.data?.message || err.response?.data || "회원가입 중 오류가 발생했습니다.");
+            setError(authErrorMessage(err, "회원가입 중 오류가 발생했습니다."));
         } finally {
             setLoading(false);
         }
     };
 
-    // 시도 횟수 초과 여부 (handleVerifyCode의 코드 초기화 조건과 동일)
+    // 입력 횟수 초과·만료 후에는 새 코드를 발송받아야 다시 인증할 수 있다.
     const codeLocked = emailError.includes("초과") || emailError.includes("다시 받아주세요");
+    const canSignUp = emailVerified && form.username.length >= 4 && form.username.length <= 20
+        && form.password.length >= 8 && form.password.length <= 20
+        && form.password === form.confirmPassword;
 
     return (
         <AuthLayout wide top={80}>
@@ -135,6 +129,8 @@ function SignUpPage() {
                             onChange={handleChange}
                             placeholder="아이디를 입력하세요"
                             autoComplete="username"
+                            minLength={4}
+                            maxLength={20}
                             required
                         />
                     </AuthField>
@@ -162,7 +158,7 @@ function SignUpPage() {
                             <AuthActionButton
                                 size="md"
                                 onClick={handleSendCode}
-                                disabled={!form.email.trim() || sendLoading || emailVerified}
+                                disabled={!EMAIL_RE.test(form.email.trim()) || sendLoading || verifyLoading || loading}
                             >
                                 {sendLoading ? "발송 중..." : codeSent ? "재발송 하기" : "인증번호 받기"}
                             </AuthActionButton>
@@ -198,7 +194,7 @@ function SignUpPage() {
                                     type="text"
                                     inputMode="numeric"
                                     value={code}
-                                    onChange={(e) => setCode(e.target.value)}
+                                    onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                                     placeholder="6자리 숫자를 입력하세요"
                                     maxLength={6}
                                     autoComplete="one-time-code"
@@ -208,7 +204,7 @@ function SignUpPage() {
                                     size="md"
                                     done={emailVerified}
                                     onClick={handleVerifyCode}
-                                    disabled={emailVerified || verifyLoading || !code.trim()}
+                                    disabled={emailVerified || verifyLoading || sendLoading || codeLocked || !VERIFICATION_CODE_RE.test(code)}
                                 >
                                     {emailVerified ? "인증 완료" : verifyLoading ? "확인 중..." : "인증 확인"}
                                 </AuthActionButton>
@@ -226,6 +222,8 @@ function SignUpPage() {
                             onChange={handleChange}
                             placeholder="비밀번호를 입력하세요"
                             autoComplete="new-password"
+                            minLength={8}
+                            maxLength={20}
                             required
                         />
                     </AuthField>
@@ -240,6 +238,8 @@ function SignUpPage() {
                             onChange={handleChange}
                             placeholder="비밀번호를 다시 입력하세요"
                             autoComplete="new-password"
+                            minLength={8}
+                            maxLength={20}
                             required
                         />
                     </AuthField>
@@ -248,7 +248,7 @@ function SignUpPage() {
                 {error && <StatusChip type="error" full className="mt-5">{error}</StatusChip>}
 
                 {/* Figma: 인증번호 칸이 생기면 1080 안에 맞추려고 간격을 좁힘 (44→32, 40→20) */}
-                <AuthPrimaryButton size="md" type="submit" disabled={loading || !emailVerified} className={codeSent ? "mt-8" : "mt-11"}>
+                <AuthPrimaryButton size="md" type="submit" disabled={loading || sendLoading || verifyLoading || !canSignUp} className={codeSent ? "mt-8" : "mt-11"}>
                     {loading ? "가입 중..." : "회원가입 하기"}
                 </AuthPrimaryButton>
             </form>

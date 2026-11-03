@@ -2,6 +2,7 @@ import { useState } from "react";
 import AuthLayout from "../../components/layouts/AuthLayout";
 import { AuthHeading, AuthField, AuthInput, AuthInputRow, AuthActionButton, AuthBoxLink } from "../../components/auth/AuthUI";
 import { sendFindIdCodeApi, verifyEmailCodeApi, findIdApi } from "../../api/authApi";
+import { EMAIL_RE, VERIFICATION_CODE_RE, authErrorMessage } from "../../utils/authForm";
 
 function FindIdPage() {
     const [email, setEmail] = useState("");
@@ -29,8 +30,8 @@ function FindIdPage() {
     };
 
     const handleSendCode = async () => {
-        if (!email.trim()) {
-            setError("이메일을 입력해주세요.");
+        if (!EMAIL_RE.test(email.trim())) {
+            setError("올바른 이메일을 입력해주세요.");
             return;
         }
         setSendLoading(true);
@@ -40,20 +41,17 @@ function FindIdPage() {
             const res = await sendFindIdCodeApi(email.trim());
             setMessage(res.data || "인증코드가 발송되었습니다. 메일함을 확인해주세요.");
             setCodeSent(true);
+            setCode("");
         } catch (err) {
-            setError(
-                err.response?.data ||
-                err.response?.data?.message ||
-                "인증코드 발송에 실패했습니다."
-            );
+            setError(authErrorMessage(err, "인증코드 발송에 실패했습니다."));
         } finally {
             setSendLoading(false);
         }
     };
 
     const handleVerifyCode = async () => {
-        if (!code.trim()) {
-            setError("인증코드를 입력해주세요.");
+        if (!VERIFICATION_CODE_RE.test(code)) {
+            setError("6자리 인증코드를 입력해주세요.");
             return;
         }
         setVerifyLoading(true);
@@ -70,19 +68,12 @@ function FindIdPage() {
                 const findRes = await findIdApi(email.trim());
                 setMaskedUsername(findRes.data.maskedUsername);
             } catch (findErr) {
-                setError(
-                    findErr.response?.data ||
-                    findErr.response?.data?.message ||
-                    "아이디 조회에 실패했습니다."
-                );
+                setError(authErrorMessage(findErr, "아이디 조회에 실패했습니다."));
             } finally {
                 setFindLoading(false);
             }
         } catch (err) {
-            const msg =
-                err.response?.data ||
-                err.response?.data?.message ||
-                "인증코드 확인에 실패했습니다.";
+            const msg = authErrorMessage(err, "인증코드 확인에 실패했습니다.");
             setError(msg);
             if (msg.includes("초과") || msg.includes("다시 받아주세요")) {
                 setCode("");
@@ -125,7 +116,7 @@ function FindIdPage() {
                             />
                             <AuthActionButton
                                 onClick={handleSendCode}
-                                disabled={!email.trim() || sendLoading || emailVerified}
+                                disabled={!EMAIL_RE.test(email.trim()) || sendLoading || verifyLoading || emailVerified}
                             >
                                 {emailVerified ? "인증완료" : sendLoading ? "발송 중..." : codeSent ? "재발송" : "인증번호 받기"}
                             </AuthActionButton>
@@ -145,14 +136,14 @@ function FindIdPage() {
                                     type="text"
                                     inputMode="numeric"
                                     value={code}
-                                    onChange={(e) => setCode(e.target.value)}
+                                    onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                                     placeholder="6자리 숫자를 입력하세요"
                                     maxLength={6}
                                     autoComplete="one-time-code"
                                 />
                                 <AuthActionButton
                                     onClick={handleVerifyCode}
-                                    disabled={!code.trim() || verifyLoading || findLoading}
+                                    disabled={!VERIFICATION_CODE_RE.test(code) || sendLoading || verifyLoading || findLoading}
                                 >
                                     {verifyLoading || findLoading ? "확인 중..." : "인증확인"}
                                 </AuthActionButton>
