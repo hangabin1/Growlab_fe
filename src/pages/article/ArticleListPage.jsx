@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_ORIGIN } from '../../api/config';
 import { getArticlesApi } from '../../api/articleApi';
+import { assetUrl } from '../../api/config';
 
 const ArticleListPage = () => {
   const navigate = useNavigate();
@@ -11,17 +11,13 @@ const ArticleListPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showSidebar, setShowSidebar] = useState(false); // ✅ 모바일 사이드바 토글
   const postsPerPage = 10;
-  const SERVER_URL = API_ORIGIN;
 
   useEffect(() => {
-    const fetchPosts = async () => {
-    const token = localStorage.getItem("token");
-    try {
-      const response = await getArticlesApi(token);
-      setPosts(response.data?.content ?? []);
-    } catch (error) { console.error("데이터 로딩 실패:", error); }
-    };
-    fetchPosts();
+    let active = true;
+    getArticlesApi(localStorage.getItem("token"))
+      .then(response => { if (active) setPosts(response.data?.content ?? []); })
+      .catch(error => console.error("데이터 로딩 실패:", error));
+    return () => { active = false; };
   }, []);
 
   const getFormattedImageUrl = (post) => {
@@ -34,7 +30,7 @@ const ArticleListPage = () => {
     const pathParts = correctedPath.split('/');
     const fileName = pathParts.pop();
     const directoryPath = pathParts.join('/');
-    return `${SERVER_URL}${directoryPath}/${encodeURIComponent(fileName)}`;
+    return assetUrl(`${directoryPath}/${encodeURIComponent(fileName)}`);
   };
 
   const filteredPosts = posts.filter(post => {
@@ -47,7 +43,7 @@ const ArticleListPage = () => {
   const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
   const popularPosts = [...posts].sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0)).slice(0, 3);
 
-  const SidebarContent = () => (
+  const renderSidebarContent = () => (
     <>
       <div className="relative mb-6 mt-2">
         <input
@@ -82,7 +78,7 @@ const ArticleListPage = () => {
   );
 
   return (
-    <div className="font-sans">
+    <div className="font-sans content-community">
       <div className="flex gap-4 lg:gap-6">
 
         {/* ✅ 모바일 사이드바 오버레이 */}
@@ -94,18 +90,18 @@ const ArticleListPage = () => {
                 <span className="font-bold text-gray-800">카테고리</span>
                 <button onClick={() => setShowSidebar(false)} className="text-gray-500 text-sub1">✕</button>
               </div>
-              {SidebarContent()}
+              {renderSidebarContent()}
             </div>
           </div>
         )}
 
         {/* ✅ 데스크탑 사이드바 */}
-        <aside className="hidden lg:block w-64 bg-white rounded-[2rem] p-8 shadow-sm h-fit border border-gray-100 sticky top-10">
-          {SidebarContent()}
+        <aside className="content-community-sidebar hidden lg:block w-64 bg-white rounded-[2rem] p-8 shadow-sm h-fit border border-gray-100 sticky top-10">
+          {renderSidebarContent()}
         </aside>
 
         {/* 메인 */}
-        <main className="flex-1 min-w-0 bg-white rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-8 lg:p-12 shadow-sm border border-gray-100">
+        <main className="content-community-main flex-1 min-w-0 bg-white rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-8 lg:p-12 shadow-sm border border-gray-100">
 
           {/* 모바일 상단 바 */}
           <div className="flex items-center justify-between mb-6 lg:hidden">
@@ -139,7 +135,7 @@ const ArticleListPage = () => {
                     <div
                       key={post.id}
                       onClick={() => navigate(`/articles/${post.id}`)}
-                      className="bg-white rounded-[1.5rem] border border-gray-100 p-4 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+                      className="content-post-preview bg-white rounded-[1.5rem] border border-gray-100 p-4 shadow-sm hover:shadow-md transition-all cursor-pointer group"
                     >
                       <div className="relative w-full h-28 sm:h-32 rounded-xl overflow-hidden mb-4 bg-gray-100">
                         {imgUrl ? (

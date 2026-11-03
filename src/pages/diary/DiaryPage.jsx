@@ -1,8 +1,10 @@
+import diaryHeadingIcon from "../../assets/icons/nav-diary.svg";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getDiariesApi, createDiaryApi, updateDiaryApi, deleteDiaryApi } from "../../api/diaryApi";
 import { getUserDevicesApi } from "../../api/deviceApi";
-import { API_ORIGIN } from "../../api/config";
+import { assetUrl } from "../../api/config";
+import { compressImageFiles } from "../../utils/imageCompression";
 
 function DiaryPage() {
     const navigate = useNavigate();
@@ -46,11 +48,19 @@ function DiaryPage() {
         finally { setLoading(false); }
     };
 
-    const handleImageChange = (e) => {
+    const handleImageChange = async (e) => {
         const files = Array.from(e.target.files);
         if (!files.length) return;
-        setImageFiles(prev => [...prev, ...files]);
-        setImagePreviews(prev => [...prev, ...files.map(f => URL.createObjectURL(f))]);
+        try {
+            const compressedFiles = await compressImageFiles(files);
+            setImageFiles(prev => [...prev, ...compressedFiles]);
+            setImagePreviews(prev => [...prev, ...compressedFiles.map(f => URL.createObjectURL(f))]);
+        } catch (err) {
+            console.error("이미지 압축 실패:", err);
+            setError("이미지 처리 중 오류가 발생했습니다.");
+        } finally {
+            e.target.value = "";
+        }
     };
 
     const removeImage = (idx) => {
@@ -103,7 +113,7 @@ function DiaryPage() {
             plantId: diary.plantId,
         });
         setImageFiles([]);
-        setImagePreviews(diary.imageUrls?.map(url => `${API_ORIGIN}${url}`) || []);
+        setImagePreviews(diary.imageUrls?.map(assetUrl) || []);
         setSelectedDiary(null);
         setShowForm(true);
         setShowList(false);
@@ -139,12 +149,12 @@ function DiaryPage() {
     };
 
     return (
-        <div className="max-w-col-8 mx-auto flex flex-col gap-4">
+        <div className="content-diary max-w-col-8 mx-auto flex flex-col gap-4">
             {/* 헤더 */}
-            <div className="flex justify-between items-center">
+            <div className="content-page-heading flex justify-between items-center">
                 <div className="flex items-center gap-2">
                     <button onClick={() => navigate("/")} className="text-gray-500 hover:text-gray-600 text-body2">← 홈</button>
-                    <h1 className="text-sub1 font-bold text-gray-800">📔 다이어리</h1>
+                    <h1 className="text-sub1 font-bold text-gray-800"><img src={diaryHeadingIcon} alt="" width="32" height="32" />다이어리</h1>
                 </div>
                 {selectedDevice && (
                     <button
@@ -157,7 +167,7 @@ function DiaryPage() {
 
             {/* 기기별 일지 탭 */}
             {devices.length > 0 ? (
-                <div className="flex gap-2 overflow-x-auto pb-1">
+                <div className="content-device-tabs flex gap-2 overflow-x-auto pb-1">
                     {devices.map(device => (
                         <button
                             key={device.serialNumber}
@@ -193,10 +203,10 @@ function DiaryPage() {
 
             {/* 메인 영역 */}
             {selectedDevice && (
-                <div className="flex flex-col sm:flex-row gap-4">
+                <div className="content-diary-columns flex flex-col sm:flex-row gap-4">
 
                     {/* 다이어리 목록 */}
-                    <div className={`${showList || (!selectedDiary && !showForm) ? "block" : "hidden"} sm:block w-full sm:w-64 flex-shrink-0 bg-white rounded-xl border border-gray-200 overflow-hidden`}>
+                    <div className={`content-diary-list ${showList || (!selectedDiary && !showForm) ? "block" : "hidden"} sm:block w-full sm:w-64 flex-shrink-0 bg-white rounded-xl border border-gray-200 overflow-hidden`}>
                         <div className="p-4 border-b border-gray-100">
                             <p className="text-body2 font-bold text-gray-700">
                                 {selectedDevice.deviceNickname || selectedDevice.serialNumber} 일지
@@ -229,7 +239,7 @@ function DiaryPage() {
                     </div>
 
                     {/* 상세 / 작성 폼 */}
-                    <div className={`${!showList || selectedDiary || showForm ? "block" : "hidden"} sm:block flex-grow bg-white rounded-xl border border-gray-200 p-5 sm:p-6`}>
+                    <div className={`content-diary-detail ${!showList || selectedDiary || showForm ? "block" : "hidden"} sm:block flex-grow bg-white rounded-xl border border-gray-200 p-5 sm:p-6`}>
                         {showForm ? (
                             <div className="flex flex-col gap-4">
                                 <div className="flex items-center gap-2 sm:hidden">
@@ -340,7 +350,7 @@ function DiaryPage() {
                                 {selectedDiary.imageUrls?.length > 0 && (
                                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                         {selectedDiary.imageUrls.map((url, idx) => (
-                                            <img key={idx} src={`${API_ORIGIN}${url}`} alt={`일지 사진 ${idx + 1}`}
+                                            <img key={idx} src={assetUrl(url)} alt={`일지 사진 ${idx + 1}`}
                                                 className="w-full aspect-square object-cover rounded-lg border border-gray-100" />
                                         ))}
                                     </div>

@@ -1,3 +1,4 @@
+import { compressImageFiles } from '../../utils/imageCompression';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { API_ORIGIN } from '../../api/config';
@@ -45,12 +46,19 @@ const ArticleCreatePage = () => {
     fetchPostDetail();
   }, [id, isEditMode]);
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const selectedFiles = Array.from(e.target.files);
     if (!selectedFiles.length) return;
-    setFiles(prev => [...prev, ...selectedFiles]);
-    setPreviews(prev => [...prev, ...selectedFiles.map(f => URL.createObjectURL(f))]);
-    e.target.value = "";
+    try {
+      const compressedFiles = await compressImageFiles(selectedFiles);
+      setFiles(prev => [...prev, ...compressedFiles]);
+      setPreviews(prev => [...prev, ...compressedFiles.map(f => URL.createObjectURL(f))]);
+    } catch (error) {
+      console.error("이미지 압축 실패:", error);
+      alert("이미지 처리 중 오류가 발생했습니다.");
+    } finally {
+      e.target.value = "";
+    }
   };
 
   const handleRemoveFile = (index) => {
@@ -96,8 +104,8 @@ const ArticleCreatePage = () => {
   };
 
   return (
-    <div className="font-sans">
-      <div className="max-w-col-8 mx-auto bg-white rounded-[2rem] sm:rounded-[3rem] shadow-sm border border-gray-100 p-6 sm:p-10 lg:p-12">
+    <div className="font-sans content-article-editor">
+      <div className="content-editor-panel max-w-col-8 mx-auto bg-white rounded-[2rem] sm:rounded-[3rem] shadow-sm border border-gray-100 p-6 sm:p-10 lg:p-12">
 
         <header className="mb-8 sm:mb-10">
           <button onClick={() => navigate(-1)} className="text-gray-500 hover:text-brand text-body2 font-bold mb-4 block">← 뒤로가기</button>

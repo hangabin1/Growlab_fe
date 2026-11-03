@@ -1,3 +1,4 @@
+import profileIcon from "../../assets/icons/user.svg";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMyCommentsApi } from "../../api/commentApi";
@@ -34,9 +35,9 @@ function MyPage() {
     }, []);
 
     return (
-        <div className="max-w-col-6 mx-auto flex flex-col gap-4">
-            <div className="bg-white rounded-2xl border border-gray-200 p-6 text-center">
-                <div className="text-h1 mb-4">🌱</div>
+        <div className="content-profile max-w-col-6 mx-auto flex flex-col gap-4">
+            <div className="content-profile-summary bg-white rounded-2xl border border-gray-200 p-6 text-center">
+                <div className="text-h1 mb-4"><img src={profileIcon} alt="" width="40" height="40" /></div>
                 <h1 className="text-h4 font-bold text-gray-800 mb-1">{username}</h1>
                 <p className="text-body2 text-gray-500 mb-4">GrowLab 회원</p>
 
@@ -50,7 +51,7 @@ function MyPage() {
                 )}
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            <div className="content-profile-panel bg-white rounded-2xl border border-gray-200 overflow-hidden">
                 <div className="flex border-b border-gray-100">
                     {TABS.map(tab => (
                         <button

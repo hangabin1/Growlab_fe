@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { API_ORIGIN } from '../../api/config';
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
 import {
@@ -11,13 +10,13 @@ import {
   deleteCommentApi,
   updateCommentApi
 } from '../../api/articleApi';
+import { assetUrl } from '../../api/config';
 
 const ArticleDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [post, setPost] = useState(null);
   const [comment, setComment] = useState("");
-  const SERVER_URL = API_ORIGIN;
 
   const [isOpen, setIsOpen] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -26,29 +25,30 @@ const ArticleDetailPage = () => {
 
   const currentUsername = localStorage.getItem("username");
 
-  const fetchDetail = useCallback(async () => {
+  useEffect(() => {
+    let active = true;
+    getArticleDetailApi(id, localStorage.getItem("token"))
+      .then(response => { if (active) setPost(response.data); })
+      .catch(error => console.error("데이터 가져오기 실패:", error));
+    return () => { active = false; };
+  }, [id]);
+
+  const fetchDetail = async () => {
     const token = localStorage.getItem("token");
     try {
       const response = await getArticleDetailApi(id, token);
       setPost(response.data);
     } catch (error) { console.error("데이터 가져오기 실패:", error); }
-  }, [id]);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    getArticleDetailApi(id, token)
-      .then(response => setPost(response.data))
-      .catch(error => console.error("데이터 가져오기 실패:", error));
-  }, [id]);
+  };
 
   const getFormattedImageUrl = (url) => {
     if (!url) return null;
-    if (url.startsWith('http')) return url;
+    if (/^https?:\/\//i.test(url)) return url;
     let correctedPath = url.replace('/api/files/', '/uploads/');
     const parts = correctedPath.split('/');
     const fileName = parts.pop();
     const path = parts.join('/');
-    return `${SERVER_URL}${path.startsWith('/') ? path : '/' + path}/${encodeURIComponent(fileName)}`;
+    return assetUrl(`${path.startsWith('/') ? path : '/' + path}/${encodeURIComponent(fileName)}`);
   };
 
   const handleLike = async () => {
@@ -97,7 +97,7 @@ const ArticleDetailPage = () => {
   const slides = getSlides();
 
   return (
-    <div className="font-sans">
+    <div className="font-sans content-article-detail">
       <div className="max-w-col-8 mx-auto">
 
         {/* 상단 네비 */}

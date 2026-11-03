@@ -1,3 +1,4 @@
+import priceHeadingIcon from "../../assets/icons/nav-price.svg";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getLatestPrice, getWeeklyPrice } from "../../api/marketpriceApi";
@@ -112,7 +113,7 @@ function PriceCard({ item, onClick, isSelected, marketType }) {
     return (
         <div
             onClick={() => onClick(item, retail, weekly)}
-            className={`bg-white rounded-2xl border p-4 shadow-sm cursor-pointer transition-all hover:shadow-md ${
+            className={`content-price-card ${isSelected ? "is-selected" : ""} bg-white rounded-2xl border p-4 shadow-sm cursor-pointer transition-all hover:shadow-md ${
                 isSelected
                     ? isWholesale
                         ? "border-brand-olive ring-2 ring-brand-cream"
@@ -164,7 +165,7 @@ function PriceCard({ item, onClick, isSelected, marketType }) {
 // 상세 패널
 function DetailPanel({ item, latest, weekly, onClose, marketType }) {
     if (!item) return (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 flex flex-col items-center justify-center text-center h-full min-h-[300px]">
+        <div className="content-price-detail bg-white rounded-2xl border border-gray-100 shadow-sm p-8 flex flex-col items-center justify-center text-center h-full min-h-[300px]">
             <span className="text-h1 mb-3">📊</span>
             <p className="text-body2 text-gray-500">품목을 선택하면<br />상세 가격 정보를 볼 수 있어요</p>
         </div>
@@ -182,7 +183,7 @@ function DetailPanel({ item, latest, weekly, onClose, marketType }) {
         : null;
 
     return (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-4">
+        <div className="content-price-detail bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-4">
             {/* 헤더 */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -323,13 +324,13 @@ function MarketPricePage() {
     };
 
     return (
-        <div className="flex flex-col gap-4 lg:gap-6">
+        <div className="content-market flex flex-col gap-4 lg:gap-6">
             {/* 헤더 */}
-            <div className="flex items-center justify-between">
+            <div className="content-page-heading flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <button onClick={() => navigate("/")} className="text-gray-500 hover:text-gray-600 text-body2">← 홈</button>
                     <div>
-                        <h1 className="text-sub1 font-bold text-gray-800">🏪 농산물 시세</h1>
+                        <h1 className="text-sub1 font-bold text-gray-800"><img src={priceHeadingIcon} alt="" width="32" height="32" />농산물 시세</h1>
                         <p className="text-caption text-gray-500 mt-1">매일 오전 6시 자동 업데이트 · KAMIS 공공데이터 기준</p>
                     </div>
                 </div>
