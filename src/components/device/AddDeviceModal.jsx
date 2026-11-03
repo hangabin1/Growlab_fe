@@ -16,7 +16,7 @@ const PRIMARY_BUTTON = "h-8 rounded bg-brand px-5 text-body1 font-medium text-wh
 
 function DeviceSymbol() {
     return (
-        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true" className="shrink-0">
+        <svg width="36" height="36" viewBox="0 0 40 40" fill="none" aria-hidden="true" className="shrink-0">
             <circle cx="20" cy="20" r="20" fill="currentColor" />
             <rect x="14.5" y="6.5" width="11" height="27" rx="1" stroke="white" />
             {[12, 20, 28].map(y => <circle key={y} cx="20" cy={y} r="1.6" stroke="white" />)}
@@ -39,22 +39,22 @@ function ConnectionIcon({ done }) {
 
 function StepIndicator({ step }) {
     return (
-        <ol aria-label="기기 추가 단계" className="relative mt-4 flex justify-between">
-            <li aria-hidden="true" className="absolute left-[50px] right-[50px] top-3.5 h-px bg-gray-300">
-                <span className={`block h-full bg-brand ${step === 3 ? "w-full" : "w-1/2"}`} />
+        <ol aria-label="기기 추가 단계" className="relative mt-2 flex justify-between px-6 py-2">
+            <li aria-hidden="true" className="absolute left-[50px] right-[50px] top-[22px] h-px bg-gray-300">
+                <span className={`block h-full bg-brand-deep ${step === 3 ? "w-full" : step === 2 ? "w-1/2" : "w-0"}`} />
             </li>
             {STEPS.map((label, index) => {
                 const number = index + 1;
                 const done = number < step || step === 3;
                 const current = number === step;
                 return (
-                    <li key={label} aria-current={current ? "step" : undefined} className="relative flex w-[100px] flex-col items-center gap-2">
+                    <li key={label} aria-current={current ? "step" : undefined} className="relative flex w-[52px] flex-col items-center gap-0.5">
                         <span className={`flex size-7 items-center justify-center rounded-full border text-body1 ${
-                            done || number === 1 ? "border-brand bg-brand font-bold text-white"
+                            done || number === 1 ? "border-brand-deep bg-brand-deep font-bold text-white"
                                 : current ? "border-brand bg-white font-medium text-brand"
                                     : "border-gray-300 bg-gray-200 text-gray-400"
                         }`} aria-hidden="true">{number}</span>
-                        <span className={`text-caption ${number <= step ? "text-brand" : "text-gray-400"}`}>
+                        <span className={`whitespace-nowrap text-body2 ${number <= step ? "text-brand" : "text-gray-400"}`}>
                             <span className="sr-only">{number}단계: </span>{label}
                         </span>
                     </li>
@@ -70,8 +70,8 @@ function DeviceSummary({ form, connected = false }) {
             <img src={DEVICE_ICONS[form.icon].src} alt="" width="60" height="60" className="size-[60px] shrink-0 object-contain" />
             <div className="flex min-w-0 flex-col gap-2">
                 <p className="break-words text-sub1 font-bold text-gray-800">{form.nickname}</p>
-                <div className="flex flex-wrap items-center gap-3 text-body1 text-gray-500">
-                    <p className="break-all">GROWLAB-{form.serial}{connected && " · 연결됨"}</p>
+                <div className="flex flex-wrap items-center gap-3 text-sub1 text-gray-500">
+                    <p className="break-all">GROWLAB-{form.serial}{connected && " - 연결됨"}</p>
                     {!connected && form.location && <span className="rounded-full border border-gray-300 px-4 text-caption">{form.location}</span>}
                 </div>
             </div>
@@ -186,15 +186,15 @@ function AddDeviceModal({ onClose, onSuccess }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
             <section ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={`${id}-title`} aria-busy={loading}
                 tabIndex={-1} onKeyDown={handleKeyDown}
-                className="max-h-[calc(100dvh-32px)] w-full max-w-[560px] overflow-y-auto rounded-lg bg-white p-4 shadow-xl outline-none">
-                <header className="flex h-16 items-center gap-4 border-b border-gray-200 pb-2 text-brand">
+                className="max-h-[calc(100dvh-32px)] w-full max-w-[560px] overflow-y-auto rounded-lg bg-[#fbfcfc] p-4 shadow-xl outline-none">
+                <header className="flex h-[52px] items-center gap-3 border-b border-gray-200 pb-2 text-brand-deep">
                     <DeviceSymbol />
-                    <h2 id={`${id}-title`} className="text-sub1 font-medium text-gray-800">기기 추가</h2>
+                    <h2 id={`${id}-title`} className="text-sub1 font-medium text-[#19213d]">기기 추가</h2>
                 </header>
                 <StepIndicator step={step} />
 
                 {step === 1 && (
-                    <form noValidate onSubmit={handleSubmit} className="mt-8">
+                    <form noValidate onSubmit={handleSubmit} className="mt-4">
                         {error && <p role="alert" className="mb-5 rounded-lg bg-error-bg px-4 py-3 text-body2 text-error">{error}</p>}
                         <div className="flex flex-col gap-5">
                             <div>
@@ -212,7 +212,7 @@ function AddDeviceModal({ onClose, onSuccess }) {
                                 <input id={`${id}-nickname`} name="nickname" required type="text" value={form.nickname} maxLength={20}
                                     onChange={event => setForm(previous => ({ ...previous, nickname: event.target.value }))}
                                     placeholder="예: 거실 스마트팜" aria-describedby={`${id}-nickname-help`} className={FIELD_CLASS} />
-                                <p id={`${id}-nickname-help`} className="mt-1 text-caption text-gray-400">최대 20자 이내</p>
+                                <p id={`${id}-nickname-help`} className="mt-2 text-caption text-gray-400">최대 20자 이내</p>
                             </div>
                             <fieldset>
                                 <legend className="mb-2 text-body1 text-gray-500">기기 아이콘</legend>
@@ -248,7 +248,7 @@ function AddDeviceModal({ onClose, onSuccess }) {
                 )}
 
                 {step === 2 && (
-                    <div className="mt-8">
+                    <div className="mt-4">
                         <h3 className="mb-2 text-body1 text-gray-500">기기 정보 확인</h3>
                         <DeviceSummary form={form} />
                         <h3 className="mb-2 mt-6 text-body1 text-gray-500">연결 상태 확인</h3>
@@ -267,14 +267,14 @@ function AddDeviceModal({ onClose, onSuccess }) {
                 )}
 
                 {step === 3 && (
-                    <div className="mt-8">
-                        <div className="flex flex-col items-center pt-2 text-center" role="status">
+                    <div className="mt-4">
+                        <div className="flex flex-col items-center text-center" role="status">
                             <img src={registeredIcon} alt="" width="140" height="140" className="size-[140px] object-contain" />
-                            <h3 className="mt-8 text-h4 font-bold text-gray-800">기기 등록 완료!</h3>
-                            <p className="mt-3 text-body1 text-gray-500">스마트팜 기기가 성공적으로 연결되었습니다.</p>
+                            <h3 className="mt-4 text-h4 font-bold text-gray-800">기기 등록 완료!</h3>
+                            <p className="mt-2 text-body1 text-gray-500">스마트팜 기기가 성공적으로 연결되었습니다.</p>
                         </div>
-                        <div className="mt-8"><DeviceSummary form={form} connected /></div>
-                        <footer className="mt-12 flex justify-end">
+                        <div className="mt-9"><DeviceSummary form={form} connected /></div>
+                        <footer className="mt-9 flex justify-end">
                             <button ref={finishRef} type="button" onClick={close} className={PRIMARY_BUTTON}>홈으로 돌아가기</button>
                         </footer>
                     </div>

@@ -3,6 +3,10 @@ import { getAllSpeciesApi } from "../../api/speciesApi";
 import { createPlantApi, deletePlantApi } from "../../api/plantApi";
 import { updatePortStatusApi } from "../../api/deviceApi";
 import { checkSharedEnvironment } from "../../utils/sharedEnvironment";
+import { toLocalISO } from "../../utils/datetime";
+import { DEVICE_ICONS } from "../../assets/deviceIcons";
+import closeIcon from "../../assets/icons/close.svg";
+import "./SelectPlantModal.css";
 
 const CATEGORY_FILTERS = ["전체", "채소", "허브", "과일", "관상식물"];
 
@@ -37,11 +41,30 @@ const SPECIES_EMOJI = {
 };
 
 const DIFFICULTY_LABEL = { EASY: "쉬움", NORMAL: "보통", HARD: "어려움" };
-const DIFFICULTY_COLOR = {
-    EASY:   "bg-brand-cream text-brand",
-    NORMAL: "bg-amber-50 text-amber-700",
-    HARD:   "bg-red-100 text-red-600",
-};
+
+
+const SPECIES_ICON_INDEX = { '딸기':0, '바질':1, '페퍼민트':1, '상추':5, '청상추':5, '적상추':5, '시금치':5, '청경채':5, '방울토마토':4, '토마토':4, '파프리카':6, '풋고추':6, '고추':6 };
+
+function SpeciesSymbol({ species, detail = false }) {
+    const name = species.name || species.koreanName;
+    const index = SPECIES_ICON_INDEX[name];
+    const icon = index === undefined ? null : DEVICE_ICONS[index];
+    return <span className={`plant-select__symbol${detail ? ' plant-select__symbol--detail' : ''}`} aria-hidden="true">
+        {icon ? <img src={icon.src} alt="" width={detail ? 52 : 36} height={detail ? 52 : 36} /> : SPECIES_EMOJI[name] || <img src={DEVICE_ICONS[2].src} alt="" width={detail ? 52 : 36} height={detail ? 52 : 36} />}
+    </span>;
+}
+
+function DifficultyBadge({ difficulty = 'NORMAL' }) {
+    const variant = difficulty === 'HARD' ? 'hard' : difficulty === 'EASY' ? 'easy' : 'normal';
+    return <span className={`plant-select__difficulty plant-select__difficulty--${variant}`}>{DIFFICULTY_LABEL[difficulty] || '보통'}</span>;
+}
+
+function SelectionCheck({ selected }) {
+    return <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <circle cx="9" cy="9" r="7" fill={selected ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5" />
+        <path d="m5.5 9 2.25 2.25 4.5-4.5" stroke={selected ? 'white' : 'currentColor'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>;
+}
 
 function SelectPlantModal({ serialNumber, portIndex, existingPlants = [], onClose, onSuccess }) {
     const [species, setSpecies]         = useState([]);
@@ -52,6 +75,12 @@ function SelectPlantModal({ serialNumber, portIndex, existingPlants = [], onClos
     const [loading, setLoading]         = useState(false);
     const [fetchLoading, setFetchLoading] = useState(true);
     const [error, setError]             = useState("");
+
+    useEffect(() => {
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        return () => { document.body.style.overflow = previousOverflow; };
+    }, []);
 
     useEffect(() => {
         getAllSpeciesApi()
@@ -89,7 +118,7 @@ function SelectPlantModal({ serialNumber, portIndex, existingPlants = [], onClos
             const created = await createPlantApi({
                     name:        plantName.trim(),
                     stageIndex:  0,
-                    plantedAt:   new Date().toISOString(),
+                    plantedAt:   toLocalISO(),
                     germinatedAt: null,
                     maturedAt:   null,
                     speciesId:   selected.id,
@@ -119,109 +148,54 @@ function SelectPlantModal({ serialNumber, portIndex, existingPlants = [], onClos
     };
 
     return (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-            <div
-                className="bg-white rounded-2xl w-full max-w-col-8 shadow-xl flex flex-col overflow-hidden"
-                style={{ height: "600px" }}
-            >
-                {/* 헤더 */}
-                <div className="flex-shrink-0 flex items-center gap-3 px-5 py-4 border-b border-gray-100">
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-600 text-sub1 ">←</button>
-                    <h2 className="text-body1 font-bold text-gray-800">식물 선택</h2>
-                    <span className="text-caption text-brand bg-brand-cream px-2 py-1 rounded-full">
-                        {"P" + (portIndex + 1) + "에 심을 품종"}
-                    </span>
-                    <div className="ml-auto flex items-center gap-2">
-                        <span className="text-body2 font-bold text-brand">🌱 GrowLab</span>
-                    </div>
-                </div>
+        <div className="plant-select-backdrop">
+            <section role="dialog" aria-modal="true" aria-labelledby="plant-select-title" className="plant-select">
+                <header className="plant-select__header">
+                    <h2 id="plant-select-title" className="plant-select__title">식물 선택</h2>
+                    <span className="plant-select__port">P{portIndex + 1}에 심을 품종</span>
+                    <button type="button" onClick={onClose} aria-label="식물 선택 닫기" className="plant-select__close">
+                        <img src={closeIcon} alt="" width="28" height="28" />
+                    </button>
+                </header>
 
-                {/* 바디 */}
-                <div className="flex flex-1 min-h-0">
-
-                    {/* 왼쪽: 검색 + 목록 */}
-                    <div className="flex flex-col flex-1 min-w-0 border-r border-gray-100">
-                        <div className="flex-shrink-0 px-4 pt-4 pb-2">
-                            <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2">
-                                <span className="text-gray-500 text-body2">🔍</span>
-                                <input
-                                    type="text"
-                                    value={search}
-                                    onChange={e => setSearch(e.target.value)}
-                                    placeholder="식물 이름으로 검색..."
-                                    className="flex-1 text-body2 focus:outline-none bg-transparent"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex-shrink-0 flex gap-2 px-4 pb-3 flex-wrap">
+                <div className="plant-select__body">
+                    <div className="plant-select__catalog">
+                        <div className="plant-select__categories" role="group" aria-label="식물 카테고리">
                             {CATEGORY_FILTERS.map(cat => (
-                                <button
-                                    key={cat}
-                                    onClick={() => setCategory(cat)}
-                                    className={`px-3 py-2 rounded-full text-caption font-medium transition-colors ${
-                                        category === cat
-                                            ? "bg-brand text-white"
-                                            : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                                    }`}
-                                >
-                                    {cat === "전체" && "🌿 "}
-                                    {cat === "채소" && "🥬 "}
-                                    {cat === "허브" && "🌿 "}
-                                    {cat === "과일" && "🍓 "}
-                                    {cat === "관상식물" && "🌸 "}
-                                    {cat}
-                                </button>
+                                <button key={cat} type="button" aria-pressed={category === cat}
+                                    className="plant-select__category" onClick={() => setCategory(cat)}>{cat}</button>
                             ))}
                         </div>
-
-                        <div className="flex-shrink-0 px-4 pb-2">
-                            <div className="text-caption text-gray-500">
-                                재배 가능한 식물 <span className="font-bold">{filtered.length}가지</span>
-                            </div>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto px-4 pb-4">
+                        <label className="plant-select__search" title={`재배 가능한 식물 ${filtered.length}가지`}>
+                            <span className="sr-only">식물 이름으로 검색</span>
+                            <input type="search" value={search} onChange={event => setSearch(event.target.value)}
+                                placeholder="식물 이름으로 검색" aria-describedby="plant-select-result-count" />
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                                <circle cx="10" cy="10" r="6" /><path d="m15 15 6 6" strokeLinecap="round" />
+                            </svg>
+                        </label>
+                        <div className="plant-select__list" aria-busy={fetchLoading}>
+                            <span id="plant-select-result-count" className="sr-only" role="status">재배 가능한 식물 {filtered.length}가지</span>
                             {fetchLoading ? (
-                                <div className="flex items-center justify-center h-32 text-gray-500 text-body2">불러오는 중...</div>
+                                <p className="plant-select__empty">불러오는 중...</p>
                             ) : filtered.length === 0 ? (
-                                <div className="flex items-center justify-center h-32 text-gray-500 text-body2">검색 결과가 없어요</div>
+                                <p className="plant-select__empty">검색 결과가 없어요</p>
                             ) : (
-                                <div className="grid grid-cols-3 gap-3">
+                                <div className="plant-select__grid">
                                     {filtered.map(sp => {
-                                        const emoji      = SPECIES_EMOJI[sp.name || sp.koreanName] || "🌱";
-                                        const isSelected = selected?.id === sp.id;
-                                        const diffKey    = sp.difficulty || "NORMAL";
+                                        const name = sp.name || sp.koreanName;
                                         const compatibility = checkSharedEnvironment(sp, existingPlants, species);
+                                        const isSelected = selected?.id === sp.id;
                                         return (
-                                            <button
-                                                key={sp.id}
-                                                onClick={() => handleSelect(sp)}
-                                                disabled={!compatibility.compatible}
-                                                title={compatibility.reason || ""}
-                                                className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 text-center transition-all ${
-                                                    !compatibility.compatible
-                                                        ? "border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed"
-                                                        : isSelected
-                                                            ? "border-brand bg-brand-cream"
-                                                            : "border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50"
-                                                }`}
-                                            >
-                                                {isSelected && (
-                                                    <div className="absolute top-2 right-2 w-5 h-5 bg-brand rounded-full flex items-center justify-center text-white text-caption">✓</div>
-                                                )}
-                                                <span className="text-h2">{emoji}</span>
-                                                <div>
-                                                    <div className="text-body2 font-bold text-gray-800">{sp.name || sp.koreanName}</div>
-                                                    <div className="text-caption text-gray-500">{sp.englishName}</div>
-                                                </div>
-                                                <span className={`text-caption px-2 py-1 rounded-full font-medium ${DIFFICULTY_COLOR[diffKey] || DIFFICULTY_COLOR.NORMAL}`}>
-                                                    {DIFFICULTY_LABEL[diffKey] || "보통"}
-                                                </span>
-                                                {!compatibility.compatible && <div className="text-caption text-red-600">{compatibility.reason}</div>}
-                                                {sp.growthDays && (
-                                                    <div className="text-caption text-gray-500">⏱ {sp.growthDays}일</div>
-                                                )}
+                                            <button key={sp.id} type="button" className="plant-select__card"
+                                                aria-label={`${name} 선택`} aria-pressed={isSelected}
+                                                disabled={!compatibility.compatible} title={compatibility.reason || name}
+                                                onClick={() => handleSelect(sp)}>
+                                                <span className="plant-select__check" aria-hidden="true"><SelectionCheck selected={isSelected} /></span>
+                                                <SpeciesSymbol species={sp} />
+                                                <span className="plant-select__card-name">{name}</span>
+                                                <DifficultyBadge difficulty={sp.difficulty} />
+                                                {!compatibility.compatible && <span className="plant-select__incompatible">{compatibility.reason}</span>}
                                             </button>
                                         );
                                     })}
@@ -230,98 +204,62 @@ function SelectPlantModal({ serialNumber, portIndex, existingPlants = [], onClos
                         </div>
                     </div>
 
-                    {/* 오른쪽: 상세 정보 */}
-                    <div className="w-64 flex-shrink-0 overflow-y-auto p-5">
+                    <aside className="plant-select__detail" aria-label="선택한 식물 상세">
                         {!selected ? (
-                            <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
-                                <div className="text-h1">🌱</div>
-                                <p className="text-body2 text-gray-500 ">식물을 선택하면<br />상세 정보가 표시됩니다</p>
-                            </div>
+                            <p className="plant-select__placeholder">식물을 선택하면<br />상세 정보가 표시됩니다</p>
                         ) : (
-                            <div className="flex flex-col gap-4">
-                                <div className="flex flex-col items-center gap-2 text-center">
-                                    <div className="w-16 h-16 rounded-2xl bg-brand-cream flex items-center justify-center text-h1">
-                                        {SPECIES_EMOJI[selected.name || selected.koreanName] || "🌱"}
-                                    </div>
-                                    <div>
-                                        <div className="font-bold text-gray-800 text-body1">{selected.name || selected.koreanName}</div>
-                                        <div className="text-caption text-gray-500">{selected.englishName}</div>
+                            <>
+                                <div className="plant-select__summary">
+                                    <SpeciesSymbol species={selected} detail />
+                                    <div className="plant-select__summary-copy">
+                                        <h3 className="plant-select__name">{selected.name || selected.koreanName}</h3>
+                                        <DifficultyBadge difficulty={selected.difficulty} />
                                     </div>
                                 </div>
-
-                                {selected.description && (
-                                    <p className="text-caption text-gray-500  text-center">{selected.description}</p>
-                                )}
-
-                                <div className="flex flex-col gap-2">
-                                    {selected.growthDays && (
-                                        <div className="bg-gray-50 rounded-lg p-3 text-center">
-                                            <div className="text-caption text-gray-500">⏱ 재배 기간</div>
-                                            <div className="text-body2 font-bold text-gray-700 mt-1">{selected.growthDays}일</div>
-                                        </div>
-                                    )}
-                                    {selected.difficulty && (
-                                        <div className="bg-gray-50 rounded-lg p-3 text-center">
-                                            <div className="text-caption text-gray-500">🧩 난이도</div>
-                                            <div className="text-body2 font-bold text-gray-700 mt-1">{DIFFICULTY_LABEL[selected.difficulty] || selected.difficulty}</div>
-                                        </div>
-                                    )}
-                                    {/* ✅ 이 품종의 생육 단계 목록 표시 */}
-                                    {selected.stageNames && selected.stageNames.length > 0 && (
-                                        <div className="bg-gray-50 rounded-lg p-3 text-center">
-                                            <div className="text-caption text-gray-500">🌾 생육 단계 ({selected.stageNames.length}단계)</div>
-                                            <div className="text-caption font-medium text-gray-700 mt-1">
-                                                {selected.stageNames.join(" → ")}
+                                {(selected.stageNames?.length > 0 || selected.description || selected.aiPromptGuideline) && (
+                                    <div className="plant-select__guide">
+                                        {selected.stageNames?.length > 0 && (
+                                            <div className="plant-select__stages">
+                                                <p>생육 단계 ({selected.stageNames.length}단계)</p>
+                                                <p>{selected.stageNames.join(" → ")}</p>
                                             </div>
-                                        </div>
-                                    )}
-                                    {selected.aiPromptGuideline && (
-                                        <p className="text-caption text-gray-500  text-center">{selected.aiPromptGuideline}</p>
-                                    )}
-                                    {selected.temperature && (
-                                        <div className="bg-gray-50 rounded-lg p-3 text-center">
-                                            <div className="text-caption text-gray-500">🌡 최적 온도</div>
-                                            <div className="text-body2 font-bold text-gray-700 mt-1">{selected.temperature}</div>
-                                        </div>
-                                    )}
-                                    {selected.waterRequirement && (
-                                        <div className="bg-gray-50 rounded-lg p-3 text-center">
-                                            <div className="text-caption text-gray-500">💧 수분 요구</div>
-                                            <div className="text-body2 font-bold text-gray-700 mt-1">{selected.waterRequirement}</div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div>
-                                        <label className="block text-caption font-medium text-gray-600 mb-1">내 식물 이름</label>
-                                        <input
-                                            type="text"
-                                            value={plantName}
-                                            disabled={existingPlants.some(plant => plant.speciesId === selected.id)}
-                                            onChange={e => setPlantName(e.target.value)}
-                                            placeholder="예: 우리집 딸기"
-                                            maxLength={20}
-                                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-body2 focus:outline-none focus:ring-2 focus:ring-brand-leaf"
-                                        />
-                                        <p className="text-caption text-gray-500 mt-1">{existingPlants.some(plant => plant.speciesId === selected.id) ? "같은 기기의 동일 품종 별명이 자동으로 적용됩니다." : "최대 20자 · 같은 품종을 추가하면 이 이름을 사용해요."}</p>
-                                </div>
-
-                                {error && (
-                                    <div className="bg-red-50 text-red-600 text-caption rounded-lg px-3 py-2">{error}</div>
+                                        )}
+                                        {(selected.description || selected.aiPromptGuideline) && (
+                                            <div className="plant-select__guideline">
+                                                {selected.description && <p>{selected.description}</p>}
+                                                {selected.aiPromptGuideline && <p>{selected.aiPromptGuideline}</p>}
+                                            </div>
+                                        )}
+                                    </div>
                                 )}
-
-                                <button
-                                    onClick={handleSubmit}
-                                    disabled={loading}
-                                    className="w-full bg-brand hover:bg-brand-deep disabled:bg-brand-olive text-white font-medium py-3 rounded-xl text-body2 transition-colors"
-                                >
-                                    {loading ? "처리 중..." : "이 식물로 재배 시작!"}
+                                <div className="plant-select__naming">
+                                    <label htmlFor="plant-select-name">식물 이름</label>
+                                    <input id="plant-select-name" type="text" value={plantName} maxLength={20}
+                                        disabled={existingPlants.some(plant => plant.speciesId === selected.id)}
+                                        onChange={event => setPlantName(event.target.value)} placeholder="식물 이름을 입력해주세요."
+                                        aria-describedby="plant-select-name-help" />
+                                    <p id="plant-select-name-help" className="plant-select__help">같은 기기의 동일 품종 별명이 자동으로 적용됩니다.<span className="sr-only"> 최대 20자.</span></p>
+                                </div>
+                                {(selected.englishName || selected.growthDays || selected.temperature || selected.waterRequirement) && (
+                                    <details className="plant-select__extra">
+                                        <summary>추가 정보</summary>
+                                        <dl>
+                                            {selected.englishName && <><dt>영문명</dt><dd>{selected.englishName}</dd></>}
+                                            {selected.growthDays && <><dt>재배 기간</dt><dd>{selected.growthDays}일</dd></>}
+                                            {selected.temperature && <><dt>최적 온도</dt><dd>{selected.temperature}</dd></>}
+                                            {selected.waterRequirement && <><dt>수분 요구</dt><dd>{selected.waterRequirement}</dd></>}
+                                        </dl>
+                                    </details>
+                                )}
+                                {error && <p role="alert" className="plant-select__error">{error}</p>}
+                                <button type="button" onClick={handleSubmit} disabled={loading} className="plant-select__submit">
+                                    {loading ? "처리 중..." : "식물 추가"}
                                 </button>
-                            </div>
+                            </>
                         )}
-                    </div>
+                    </aside>
                 </div>
-            </div>
+            </section>
         </div>
     );
 }
