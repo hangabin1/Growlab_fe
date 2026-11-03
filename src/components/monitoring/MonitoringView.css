@@ -1,0 +1,190 @@
+.monitoring { width: 100%; max-width: 1140px; margin-inline: auto; padding: 24px 20px; color: var(--color-gray-700); }
+.monitoring button { cursor: pointer; }
+.monitoring button:disabled { cursor: not-allowed; opacity: .5; }
+.monitoring button:focus-visible, .monitoring input:focus-visible, .monitoring select:focus-visible, .monitoring summary:focus-visible,
+.monitor-notice-dialog button:focus-visible { outline: 2px solid var(--color-brand-leaf); outline-offset: 2px; }
+.monitoring__heading { display: flex; align-items: center; gap: 16px; height: 48px; margin-bottom: 24px; }
+.monitoring__heading h2 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 32px; line-height: 48px; font-weight: 700; letter-spacing: -1px; color: var(--color-gray-800); }
+.monitor-back, .monitor-device-icon { flex-shrink: 0; }
+.monitor-back { width: 32px; height: 32px; }
+.monitor-connection { display: inline-flex; flex-shrink: 0; align-items: center; gap: 8px; height: 32px; margin-left: 16px; border: 1px solid var(--color-brand-leaf); border-radius: 999px; padding: 0 12px; color: var(--color-brand-leaf); background: var(--color-success-bg); font-size: 16px; line-height: 24px; }
+.monitor-connection i, .monitor-selected-port i, .monitor-port-picker i { display: inline-block; flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.monitor-connection.is-pending { color: #a39129; border-color: #a39129; background: #fef9c3; }
+.monitoring__scroll { display: flex; flex-direction: column; gap: 24px; max-height: calc(var(--screen-h) - 208px); overflow-y: auto; padding-right: 12px; scrollbar-gutter: stable; }
+.monitoring__scroll::-webkit-scrollbar { width: 8px; }
+.monitoring__scroll::-webkit-scrollbar-thumb { border-radius: 4px; background: var(--color-gray-300); }
+.monitoring__scroll::-webkit-scrollbar-button { display: none; height: 0; }
+.monitor-banner { display: flex; align-items: center; gap: 16px; flex-shrink: 0; width: 100%; height: 64px; padding: 15px 23px; border: 1px solid #a39129; border-radius: 8px; background: #fef9c3; color: #a39129; text-align: left; font-size: 16px; line-height: 24px; }
+.monitor-banner > svg { flex-shrink: 0; }
+.monitor-banner > svg:last-child { margin-left: auto; }
+.monitor-banner strong { flex-shrink: 0; font-size: 20px; line-height: 28px; font-weight: 500; }
+.monitor-banner-message { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-gray-800); }
+.monitor-banner-serial { flex-shrink: 0; color: var(--color-gray-500); }
+.monitor-banner.is-empty { border-color: var(--color-gray-300); background: white; color: var(--color-gray-500); }
+.monitor-banner.is-empty .monitor-banner-message { color: var(--color-gray-500); }
+.monitor-section { flex-shrink: 0; border-radius: 8px; padding: 20px; background: #fbfcfc; }
+.monitor-section h3 { font-size: 24px; line-height: 28px; font-weight: 700; letter-spacing: -1px; color: var(--color-gray-800); }
+.monitor-section h4 { font-size: 20px; line-height: 28px; font-weight: 500; letter-spacing: -1px; }
+.monitor-common > h3 { margin-bottom: 20px; }
+.monitor-sensors { display: grid; grid-template-columns: 232px 232px minmax(0, 1fr); gap: 16px; }
+.monitor-sensor { display: flex; flex-direction: column; justify-content: space-between; height: 168px; padding: 15px; border: 1px solid var(--color-gray-300); border-radius: 8px; background: white; }
+.monitor-sensor h4 { color: var(--color-gray-600); }
+.monitor-sensor p { font-size: 40px; line-height: 56px; font-weight: 700; letter-spacing: -1px; }
+.monitor-sensor > span { font-size: 16px; line-height: 24px; }
+.monitor-sensor.is-good { border-color: var(--color-brand-leaf); background: var(--color-success-bg); color: var(--color-brand); }
+.monitor-sensor.is-good > span { color: var(--color-brand-leaf); }
+.monitor-sensor.is-bad { border-color: var(--color-error-sub); background: var(--color-error-bg); color: var(--color-error); }
+.monitor-sensor.is-bad > span { color: var(--color-error-sub); }
+.monitor-sensor.is-pending { color: var(--color-gray-400); }
+.monitor-nutrients { height: 168px; border: 1px solid var(--color-gray-300); border-radius: 8px; padding: 15px; background: white; }
+.monitor-nutrients > h4 { margin-bottom: 16px; }
+.monitor-nutrients > div { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.monitor-nutrient { min-width: 0; height: 92px; overflow: hidden; border: 1px solid var(--color-gray-300); border-radius: 8px; }
+.monitor-nutrient header { display: flex; align-items: center; justify-content: space-between; gap: 4px; height: 32px; border-bottom: 1px solid var(--color-gray-300); padding: 3px 7px; background: var(--color-gray-100); font-size: 14px; line-height: 24px; color: var(--color-gray-500); }
+.monitor-nutrient p { display: flex; align-items: center; height: 60px; padding: 8px; font-size: 24px; line-height: 28px; letter-spacing: -1px; white-space: nowrap; color: var(--color-gray-600); }
+.monitor-nutrient p.is-water-empty { color: var(--color-error); }
+.monitor-badge { flex-shrink: 0; height: 20px; border: 1px solid var(--color-brand-leaf); border-radius: 999px; padding: 1px 8px; color: var(--color-brand-leaf); background: var(--color-success-bg); font-size: 10px; line-height: 16px; white-space: nowrap; }
+.monitor-badge.is-bad { color: var(--color-error-sub); border-color: var(--color-error-sub); background: var(--color-error-bg); }
+.monitor-advice { height: 284px; margin-top: 16px; border: 1px solid var(--color-gray-300); border-radius: 8px; padding: 15px; background: white; }
+.monitor-advice > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 28px; margin-bottom: 16px; }
+.monitor-advice button { flex-shrink: 0; color: var(--color-gray-400); }
+.monitor-advice > div { height: 208px; overflow-y: auto; border-radius: 4px; padding: 8px; background: var(--color-gray-100); font-size: 14px; line-height: 24px; white-space: pre-wrap; color: var(--color-gray-500); }
+.monitor-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 32px; }
+.monitor-controls { position: relative; height: 284px; }
+.monitor-reset { height: 32px; border-radius: 4px; padding: 4px 20px; background: var(--color-gray-500); font-size: 14px; line-height: 24px; color: white; white-space: nowrap; }
+.monitor-controls-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+.monitor-control { min-width: 0; height: 196px; overflow: hidden; border: 1px solid var(--color-gray-300); border-radius: 8px; background: white; }
+.monitor-control > header { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 52px; border-bottom: 1px solid var(--color-gray-300); padding: 11px 15px; background: var(--color-gray-100); }
+.monitor-mode { display: flex; flex-shrink: 0; align-items: center; gap: 8px; font-size: 14px; line-height: 24px; color: var(--color-gray-400); }
+.monitor-mode button { position: relative; width: 44px; height: 24px; border-radius: 999px; background: var(--color-gray-300); }
+.monitor-mode i { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: white; transition: transform .2s; }
+.monitor-mode button.is-auto { background: var(--color-brand); }
+.monitor-mode button.is-auto i { transform: translateX(20px); }
+.monitor-control-body { display: flex; flex-direction: column; justify-content: space-between; height: 144px; padding: 16px; }
+.monitor-times { display: grid; grid-template-columns: minmax(0, 1fr) 16px minmax(0, 1fr); gap: 8px; align-items: end; }
+.monitor-times > span { align-self: end; height: 32px; font-size: 14px; line-height: 32px; text-align: center; }
+.monitor-times label, .monitor-capture { display: block; min-width: 0; font-size: 14px; line-height: 16px; color: var(--color-gray-500); }
+.monitor-control input, .monitor-control select { display: block; width: 100%; min-width: 0; height: 32px; margin-top: 8px; border: 1px solid var(--color-gray-300); border-radius: 4px; padding: 3px 8px; background: var(--color-gray-100); font-size: 12px; line-height: 24px; color: var(--color-gray-600); }
+.monitor-primary { display: block; flex-shrink: 0; width: 100%; height: 40px; border-radius: 4px; background: var(--color-brand); font-size: 14px; line-height: 24px; color: white; }
+.monitor-primary:hover { background: var(--color-brand-deep); }
+.monitor-manual { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.monitor-manual button { height: 44px; border-radius: 4px; background: var(--color-gray-200); font-size: 16px; line-height: 24px; color: var(--color-gray-400); }
+.monitor-manual button[aria-pressed="true"] { background: var(--color-brand); color: white; }
+.monitor-save-message { position: absolute; bottom: 0; left: 20px; right: 20px; background: #fbfcfc; font-size: 12px; line-height: 20px; text-align: center; color: var(--color-brand); }
+.monitor-save-message.is-error { color: var(--color-error); }
+.monitor-ports { padding-bottom: 32px; }
+.monitor-selected-port { display: inline-flex; align-items: center; gap: 4px; height: 32px; border: 1px solid var(--color-brand-leaf); border-radius: 4px; padding: 3px 12px; background: var(--color-success-bg); font-size: 12px; line-height: 24px; color: var(--color-brand-leaf); }
+.monitor-selected-port strong { margin-left: 20px; color: var(--color-gray-600); font-weight: 500; }
+.monitor-selected-port > span { color: var(--color-gray-500); }
+.monitor-selected-port i { background: var(--color-gray-400); }
+.monitor-selected-port i.is-on { background: var(--color-brand-leaf); }
+.monitor-port-picker { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; margin-top: 24px; border: 1px solid var(--color-gray-300); border-radius: 8px; padding: 9px 15px; background: white; }
+.monitor-port-buttons { display: flex; flex-shrink: 0; align-items: center; gap: 16px; }
+.monitor-port-buttons > strong { font-size: 16px; line-height: 24px; font-weight: 500; }
+.monitor-port-buttons > div { display: flex; gap: 8px; }
+.monitor-port-buttons button { display: flex; align-items: center; justify-content: center; gap: 4px; width: 64px; height: 20px; border: 1px solid var(--color-gray-300); border-radius: 999px; padding: 1px 6px; background: var(--color-gray-100); font-size: 12px; line-height: 16px; color: var(--color-gray-500); }
+.monitor-port-buttons button[aria-pressed="true"] { border-color: var(--color-brand); background: var(--color-brand); color: white; }
+.monitor-port-legend { display: flex; align-items: center; gap: 12px; }
+.monitor-port-legend > span { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; line-height: 16px; white-space: nowrap; color: var(--color-gray-400); }
+.monitor-port-detail { display: grid; grid-template-columns: 288px minmax(0, 1fr); gap: 16px; margin-top: 16px; }
+.monitor-plant-info, .monitor-growth-detail { min-width: 0; min-height: 460px; border: 1px solid var(--color-gray-300); border-radius: 8px; padding: 15px; background: white; }
+.monitor-plant-info > header { display: flex; align-items: center; gap: 12px; }
+.monitor-plant-icon { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 56px; height: 56px; font-size: 36px; }
+.monitor-plant-icon img { width: 56px; height: 56px; object-fit: contain; }
+.monitor-plant-info > header > div { min-width: 0; }
+.monitor-plant-info > header > div > div { display: flex; align-items: center; gap: 12px; }
+.monitor-plant-info > header h4 { font-weight: 700; }
+.monitor-plant-info > header span:not(.monitor-plant-icon) { border-radius: 999px; padding: 0 12px; background: var(--color-gray-200); font-size: 12px; line-height: 20px; white-space: nowrap; color: var(--color-gray-500); }
+.monitor-plant-info > header p { margin-top: 8px; overflow-wrap: anywhere; font-size: 14px; line-height: 24px; color: var(--color-gray-400); }
+.monitor-plant-info > dl { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+.monitor-plant-info > dl > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; border: 1px solid var(--color-gray-200); border-radius: 4px; padding: 11px 15px; font-size: 14px; line-height: 24px; }
+.monitor-plant-info dt { color: var(--color-gray-400); }
+.monitor-plant-info dd { color: var(--color-gray-600); text-align: right; }
+.monitor-stage-note { min-height: 72px; margin-top: 16px; border: 1px solid var(--color-gray-200); border-radius: 4px; padding: 11px 15px; background: var(--color-gray-100); font-size: 14px; line-height: 24px; color: var(--color-gray-400); }
+.monitor-extra { margin-top: 16px; font-size: 12px; line-height: 20px; color: var(--color-gray-500); }
+.monitor-extra summary { cursor: pointer; }
+.monitor-extra dl { margin-top: 8px; }
+.monitor-extra dl > div { display: flex; justify-content: space-between; gap: 8px; }
+.monitor-extra button { width: 100%; margin-top: 8px; border: 1px solid var(--color-gray-300); border-radius: 4px; padding: 4px 8px; }
+.monitor-growth-detail > h4 { margin-bottom: 12px; }
+.monitor-growth-summary { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; }
+.monitor-forecast, .monitor-observation > div { grid-column: span 2; min-width: 0; min-height: 84px; border: 1px solid var(--color-gray-200); border-radius: 4px; padding: 11px; background: white; }
+.monitor-observation { display: contents; }
+.monitor-observation > div:nth-last-child(-n+2) { grid-column: span 3; }
+.monitor-observation > div > div:first-child { margin-bottom: 8px; font-size: 14px; line-height: 24px; font-weight: 400; color: var(--color-gray-400); }
+.monitor-observation > div > div:last-child { font-size: 20px; line-height: 28px; letter-spacing: -1px; }
+.monitor-forecast > section { min-height: 100%; margin: 0; border: 0; padding: 0; background: transparent; }
+.monitor-forecast h3 { margin-bottom: 8px; font-size: 14px; line-height: 24px; letter-spacing: 0; font-weight: 400; color: var(--color-gray-400); }
+.monitor-forecast section > div:first-child { display: block; margin: 0; }
+.monitor-forecast section > div:first-child > span { display: none; }
+.monitor-forecast .text-h2, .monitor-forecast .text-h4 { font-size: 20px; line-height: 28px; letter-spacing: -1px; }
+.monitor-forecast section > div + div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.monitor-forecast section > div + div > span { font-size: 12px; line-height: 16px; }
+.monitor-growth-bottom { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+.monitor-chart-slot, .monitor-diagnosis-slot { min-width: 0; min-height: 188px; border: 1px solid var(--color-gray-200); border-radius: 4px; padding: 11px; background: white; }
+.monitor-chart { display: flex; flex-direction: column; height: 100%; }
+.monitor-chart > h5, .monitor-diagnosis-block > h5 { margin: 0 0 12px; font-size: 14px; line-height: 20px; font-weight: 400; color: var(--color-gray-400); }
+.monitor-chart svg { display: block; width: 100%; height: 100px; border-radius: 4px; background: var(--color-gray-100); }
+.monitor-chart-note { margin-top: 8px; font-size: 12px; line-height: 16px; color: var(--color-gray-400); }
+.monitor-diagnosis-block { display: flex; flex-direction: column; height: 100%; min-height: 164px; }
+.monitor-diagnosis-body { flex: 1; max-height: 180px; overflow-y: auto; border-radius: 4px; padding: 8px; background: var(--color-gray-100); font-size: 14px; line-height: 24px; color: var(--color-gray-500); }
+.monitor-diagnosis-body p { white-space: pre-line; }
+.monitor-diagnosis-block > button { flex-shrink: 0; width: 100%; height: 40px; margin-top: 12px; border-radius: 4px; background: var(--color-brand); color: white; font-size: 14px; line-height: 24px; }
+.monitor-empty { display: flex; align-items: center; justify-content: center; min-height: 100px; padding: 12px; font-size: 14px; line-height: 24px; text-align: center; color: var(--color-gray-500); }
+.monitor-notice-backdrop { position: fixed; z-index: 50; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgb(0 0 0 / 60%); }
+.monitor-notice-dialog { display: flex; flex-direction: column; width: 560px; max-width: 100%; height: 520px; max-height: calc((100dvh - 32px) / var(--app-zoom, 1)); padding: 16px; border-radius: 8px; background: #fbfcfc; zoom: var(--app-zoom, 1); }
+.monitor-notice-dialog > header { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; height: 48px; border-bottom: 1px solid var(--color-gray-200); padding-bottom: 16px; }
+.monitor-notice-dialog h2 { font-size: 20px; line-height: 28px; letter-spacing: -1px; font-weight: 500; color: #19213d; }
+.monitor-notice-dialog header button { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; cursor: pointer; }
+.monitor-notice-list { flex: 1; min-height: 0; overflow-y: auto; margin-top: 12px; padding-right: 24px; scrollbar-gutter: stable; }
+.monitor-notice-list::-webkit-scrollbar { width: 8px; }
+.monitor-notice-list::-webkit-scrollbar-thumb { border-radius: 4px; background: var(--color-gray-300); }
+.monitor-notice-list::-webkit-scrollbar-button { display: none; height: 0; }
+.monitor-notice-list ul { display: flex; flex-direction: column; gap: 12px; }
+.monitor-notice-item { display: flex; flex-direction: column; gap: 4px; min-height: 104px; border: 1px solid #a39129; border-radius: 8px; padding: 11px; background: #fef9c3; font-size: 14px; line-height: 24px; color: var(--color-gray-600); overflow-wrap: anywhere; }
+.monitor-notice-item p:first-child { color: #a39129; }
+.monitor-notice-item.is-read { opacity: .75; }
+.monitor-more { display: block; width: 100%; margin-top: 12px; padding: 8px; border: 1px solid var(--color-gray-300); border-radius: 4px; font-size: 14px; line-height: 24px; color: var(--color-gray-600); }
+@media (width >= 1024px) {
+    body:has(.app-monitoring) .monitor-notice-backdrop { left: calc(340px * var(--app-zoom)); }
+    body:has(.app-monitoring > aside button[aria-label="메뉴 펼치기"]) .monitor-notice-backdrop { left: calc(84px * var(--app-zoom)); }
+}
+@media (width < 1024px) {
+    .monitoring__heading { gap: 8px; height: auto; min-height: 48px; flex-wrap: wrap; }
+    .monitoring__heading h2 { font-size: 24px; line-height: 32px; }
+    .monitor-connection { margin-left: 0; font-size: 12px; }
+    .monitoring__scroll { max-height: none; overflow: visible; padding-right: 0; }
+    .monitor-sensors { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .monitor-nutrients { grid-column: 1 / -1; }
+    .monitor-banner { gap: 8px; padding-inline: 12px; }
+    .monitor-banner strong { font-size: 14px; }
+    .monitor-banner-serial { display: none; }
+    .monitor-controls { height: auto; }
+    .monitor-controls-grid, .monitor-port-detail { grid-template-columns: 1fr; }
+    .monitor-port-picker { flex-wrap: wrap; gap: 12px; }
+    .monitor-port-buttons { flex: 1 1 100%; min-width: 0; flex-wrap: wrap; }
+    .monitor-port-buttons > div { min-width: 0; flex-wrap: wrap; }
+    .monitor-port-legend { flex-wrap: wrap; }
+    .monitor-plant-info { min-height: 0; }
+    .monitor-save-message { position: static; margin-top: 12px; }
+}
+@media (width < 560px) {
+    .monitoring { padding-inline: 20px; }
+    .monitor-section { padding: 16px; }
+    .monitor-section h3 { font-size: 20px; line-height: 28px; }
+    .monitor-section h4 { font-size: 18px; line-height: 24px; }
+    .monitor-sensors { gap: 12px; }
+    .monitor-sensor p { font-size: 28px; line-height: 40px; }
+    .monitor-nutrients { height: auto; }
+    .monitor-nutrients > div { gap: 8px; }
+    .monitor-nutrient { height: 112px; }
+    .monitor-nutrient header { flex-direction: column; align-items: flex-start; justify-content: center; height: 52px; padding-inline: 4px; font-size: 12px; }
+    .monitor-nutrient p { padding: 4px; font-size: 18px; }
+    .monitor-badge { padding-inline: 3px; font-size: 9px; }
+    .monitor-reset { padding-inline: 8px; font-size: 12px; }
+    .monitor-selected-port strong { margin-left: 4px; }
+    .monitor-port-picker { padding: 12px; }
+    .monitor-growth-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .monitor-forecast, .monitor-observation > div, .monitor-observation > div:nth-last-child(-n+2) { grid-column: span 1; }
+    .monitor-growth-bottom { grid-template-columns: 1fr; }
+}
