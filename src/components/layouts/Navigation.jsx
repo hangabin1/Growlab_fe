@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import NavLinks from "./NavLinks";
+import BrandMark from "./BrandMark";
 
 function Navigation() {
     const [isOpen, setIsOpen] = useState(false);
@@ -10,8 +11,9 @@ function Navigation() {
             <div className="container-page">
                 <div className="flex justify-between items-center h-16">
                     {/* 로고 */}
-                    <Link className="flex items-center gap-2 font-bold text-brand text-sub1" to="/" onClick={() => setIsOpen(false)}>
-                        🌱 GrowLab
+                    <Link aria-label="GrowLab 홈" className="flex items-center gap-2 font-bold text-brand text-sub1" to="/" onClick={() => setIsOpen(false)}>
+                        <BrandMark size={28} />
+                        <span>growlab</span>
                         <span className="text-caption text-gray-500 font-normal hidden sm:block">스마트팜 관리 플랫폼</span>
                     </Link>
 
@@ -22,8 +24,9 @@ function Navigation() {
 
                     {/* 모바일 햄버거 */}
                     <div className="md:hidden">
-                        <button onClick={() => setIsOpen(!isOpen)} className="text-gray-500 hover:text-brand focus:outline-none">
-                            <svg className="h-6 w-6 fill-current" viewBox="0 0 24 24">
+                        <button type="button" aria-label={isOpen ? "메뉴 닫기" : "메뉴 열기"} aria-expanded={isOpen} aria-controls="mobile-navigation"
+                            onClick={() => setIsOpen(!isOpen)} className="text-gray-500 hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+                            <svg className="h-6 w-6 fill-current" viewBox="0 0 24 24" aria-hidden="true">
                                 {isOpen ? (
                                     <path fillRule="evenodd" clipRule="evenodd" d="M18.278 16.864a1 1 0 01-1.414 1.414l-4.829-4.828-4.828 4.828a1 1 0 01-1.414-1.414l4.828-4.829-4.828-4.828a1 1 0 011.414-1.414l4.829 4.828 4.828-4.828a1 1 0 111.414 1.414l-4.828 4.829 4.828 4.828z" />
                                 ) : (
@@ -35,7 +38,7 @@ function Navigation() {
                 </div>
 
                 {/* 모바일 드롭다운 */}
-                <div className={`${isOpen ? "block" : "hidden"} md:hidden pb-4`}>
+                <div id="mobile-navigation" className={`${isOpen ? "block" : "hidden"} md:hidden pb-4`}>
                     <ul className="flex flex-col space-y-1">
                         <NavLinks onClick={() => setIsOpen(false)} isMobile={true} />
                     </ul>

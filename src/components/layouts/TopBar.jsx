@@ -6,13 +6,12 @@ import communityIcon from "../../assets/icons/nav-community.svg";
 import priceIcon from "../../assets/icons/nav-price.svg";
 import diaryIcon from "../../assets/icons/nav-diary.svg";
 import mypageIcon from "../../assets/icons/nav-mypage.svg";
-import homeIcon from "../../assets/icons/nav-home.svg";
 import notificationIcon from "../../assets/icons/notification.svg";
 
 // 상단 바 (PC 전용). Figma: 높이 88, 현재 위치(아이콘 32 + PC/H2 26/40 Bold) + 알림 버튼 40
 const CRUMBS = [
     { match: (p) => p === "/", title: "홈", icon: crumbHomeIcon, size: 32 },
-    { match: (p) => p.startsWith("/monitoring"), title: "모니터링", icon: homeIcon, size: 28 },
+    { match: (p) => p.startsWith("/monitoring"), title: "홈", icon: crumbHomeIcon, size: 32 },
     { match: (p) => p.startsWith("/articles"), title: "커뮤니티", icon: communityIcon, size: 28 },
     { match: (p) => p.startsWith("/market-price"), title: "도소매 가격", icon: priceIcon, size: 28 },
     { match: (p) => p.startsWith("/diary"), title: "다이어리", icon: diaryIcon, size: 28 },

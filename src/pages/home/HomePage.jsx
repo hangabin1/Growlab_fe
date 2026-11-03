@@ -7,7 +7,7 @@ import SelectPlantModal from "../../components/device/SelectPlantModal";
 import { startMonitoringPerformanceRun } from "../../utils/monitoringPerformance";
 import { deviceSensorRanges, sharedSensorStatus } from "../../utils/sharedEnvironment";
 import { isPortPreviewEnabled } from "../../dev/portPreview";
-import plantIcon from "../../assets/icons/plant.svg";
+import plantIcon from "../../assets/icons/farm-leaf.svg";
 import dropdownIcon from "../../assets/icons/dropdown.svg";
 import addIcon from "../../assets/icons/add.svg";
 import temperatureIcon from "../../assets/icons/temperature.svg";

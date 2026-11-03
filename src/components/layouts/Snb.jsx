@@ -8,8 +8,9 @@ import priceIcon from "../../assets/icons/nav-price.svg";
 import diaryIcon from "../../assets/icons/nav-diary.svg";
 import mypageIcon from "../../assets/icons/nav-mypage.svg";
 import userIcon from "../../assets/icons/user.svg";
+import BrandMark from "./BrandMark";
 
-// 좌측 내비게이션 (PC 전용). Figma: 펼침 340 / 접힘 100
+// 좌측 내비게이션 (PC 전용). Figma: 펼침 340 / 접힘 84 (좌우 24 + 아이콘 영역 36)
 const NAV_ITEMS = [
     { to: "/", label: "홈", icon: homeIcon, match: (p) => p === "/" || p.startsWith("/monitoring") },
     { to: "/articles", label: "커뮤니티", icon: communityIcon, match: (p) => p.startsWith("/articles") },
@@ -63,7 +64,7 @@ function Snb() {
 
     return (
         <aside
-            className={`hidden lg:flex sticky top-0 z-30 h-(--screen-h) shrink-0 flex-col justify-between bg-white pt-6 transition-[width] ${SLIDE} ${collapsed ? "w-[100px]" : "w-[340px]"}`}
+            className={`hidden lg:flex sticky top-0 z-30 h-(--screen-h) shrink-0 flex-col justify-between bg-white pt-6 transition-[width] ${SLIDE} ${collapsed ? "w-[84px]" : "w-[340px]"}`}
         >
             <div className="flex h-[400px] flex-col px-6">
                 {/* 로고 + 접기 버튼 */}
@@ -77,21 +78,21 @@ function Snb() {
                                 aria-label="메뉴 펼치기"
                                 className="group size-9 shrink-0"
                             >
-                                <LogoMark className="group-hover:hidden group-focus-visible:hidden" />
+                                <BrandMark className="group-hover:hidden group-focus-visible:hidden" />
                                 <img src={foldOpenIcon} alt="" width="36" height="36" className="hidden group-hover:block group-focus-visible:block" />
                             </button>
                         ) : (
                             <Link to="/" aria-label="GrowLab 홈" className="size-9 shrink-0">
-                                <LogoMark />
+                                <BrandMark />
                             </Link>
                         )}
                         <Link
                             to="/"
                             tabIndex={collapsed ? -1 : undefined}
                             aria-hidden={collapsed}
-                            className={`text-h4 font-bold text-brand ${labelSlide(collapsed, "ml-3 w-[172px]")}`}
+                            className={`text-[32px] font-bold leading-9 tracking-[-1px] text-brand ${labelSlide(collapsed, "ml-2 w-[172px]")}`}
                         >
-                            GrowLab
+                            growlab
                         </Link>
                     </div>
                     <button
@@ -168,13 +169,6 @@ function Snb() {
                 </div>
             </div>
         </aside>
-    );
-}
-
-// TODO: 로고 파일 전달되면 교체 (Figma상 36x36 심볼 + 172x36 워드마크 자리)
-function LogoMark({ className = "" }) {
-    return (
-        <span className={`flex size-9 items-center justify-center text-h4 ${className}`} aria-hidden="true">🌱</span>
     );
 }
 
